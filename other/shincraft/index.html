@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShinCraft — Minecraft 玩家服务器</title>
+    <style>
+        :root {
+            --red: #E03A2E;
+            --red-dark: #B83227;
+            --red-light: #FFF0EE;
+            --blue: #3A6FB5;
+            --blue-light: #EBF3FB;
+            --gold: #F0A030;
+            --gold-light: #FFF9F0;
+            --white: #FFFFFF;
+            --bg: #FCFCFC;
+            --text: #1E1E24;
+            --text-secondary: #5C5C66;
+            --text-muted: #8A8A96;
+            --border: #E8E8EE;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+            --radius-sm: 8px;
+            --radius: 14px;
+            --radius-lg: 20px;
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', 'PingFang SC', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            font-size: 16px;
+        }
+        body {
+            font-family: 'Inter', 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+            background-color: var(--white);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* ========== 背景装饰 ========== */
+        .bg-decoration {
+            position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.5;
+        }
+        .bg-circle-1 {
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(224, 58, 46, 0.04) 0%, transparent 70%);
+            top: -120px;
+            right: -100px;
+        }
+        .bg-circle-2 {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(58, 111, 181, 0.04) 0%, transparent 70%);
+            bottom: 20%;
+            left: -80px;
+        }
+        .bg-square-1 {
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(224, 58, 46, 0.08);
+            border-radius: 12px;
+            top: 25%;
+            right: 8%;
+            transform: rotate(25deg);
+            animation: floatDecor 8s ease-in-out infinite;
+        }
+        .bg-square-2 {
+            width: 36px;
+            height: 36px;
+            border: 2px solid rgba(58, 111, 181, 0.1);
+            border-radius: 8px;
+            top: 60%;
+            left: 5%;
+            transform: rotate(-15deg);
+            animation: floatDecor 10s ease-in-out infinite 1.5s;
+        }
+        .bg-dot-1 {
+            width: 10px;
+            height: 10px;
+            background: rgba(240, 160, 48, 0.3);
+            border-radius: 3px;
+            top: 18%;
+            left: 12%;
+            animation: floatDecor 6s ease-in-out infinite 0.5s;
+        }
+        .bg-dot-2 {
+            width: 8px;
+            height: 8px;
+            background: rgba(224, 58, 46, 0.25);
+            border-radius: 2px;
+            top: 70%;
+            right: 15%;
+            animation: floatDecor 7s ease-in-out infinite 2s;
+        }
+
+        @keyframes floatDecor {
+            0%, 100% { transform: translateY(0) rotate(25deg); }
+            25% { transform: translateY(-18px) rotate(28deg); }
+            50% { transform: translateY(-6px) rotate(22deg); }
+            75% { transform: translateY(-22px) rotate(26deg); }
+        }
+
+        /* ========== 主要内容区域 ========== */
+        .main-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 28px;
+        }
+
+        /* ========== 第一部分：Hero ========== */
+        .hero-section {
+            display: flex;
+            align-items: stretch;
+            gap: 48px;
+            padding: 40px;
+            min-height: auto;
+            position: relative;
+            z-index: 1;
+            /* 新增以下 4 行 */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.3s ease;
+        }
+        .hero-left {
+            flex: 1 1 55%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 16px;
+        }
+        .hero-left.has-bg .hero-title,
+        .hero-left.has-bg .hero-desc {
+            color: #ffffff;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .hero-logo-area {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        @keyframes spinSlow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .hero-title {
+            font-size: 2.6rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text);
+            line-height: 1.1;
+        }
+        .hero-title .accent {
+            color: var(--red);
+            position: relative;
+        }
+        .hero-title .accent::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: rgba(224, 58, 46, 0.15);
+            border-radius: 3px;
+            z-index: -1;
+        }
+        .hero-desc {
+            font-size: 1rem;
+            color: var(--text);
+            line-height: 1.7;
+            max-width: 480px;
+        }
+        .hero-tag-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .hero-tag {
+            display: inline-block;
+            padding: 5px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 20px;
+            letter-spacing: 0.01em;
+        }
+        .tag-red { background: var(--red-light); color: var(--red-dark); }
+        .tag-blue { background: var(--blue-light); color: var(--blue); }
+        .tag-gold { background: var(--gold-light); color: #B8781E; }
+
+        /* 右侧：服务器状态 */
+        .hero-right {
+            flex: 0 0 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .status-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+            cursor: default;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+            border-color: #ddd;
+        }
+        .status-indicator {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .status-indicator.online {
+            background: #2ECC71;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.5);
+        }
+        .status-indicator.online::after {
+            content: '';
+            position: absolute;
+            inset: -3px;
+            border-radius: 50%;
+            border: 2px solid rgba(46, 204, 113, 0.3);
+            animation: pulse 2s ease-out infinite;
+        }
+        .status-indicator.offline {
+            background: #BDC3C7;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.8); opacity: 0; }
+        }
+        .status-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .status-name {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.2;
+        }
+        .status-addr {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            background: #F7F7FA;
+            padding: 3px 10px;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 4px;
+            margin-right: 4px;
+            letter-spacing: 0.02em;
+            user-select: all;
+            cursor: text;
+            transition: all var(--transition);
+        }
+        .status-addr:hover {
+            background: #EEEEF3;
+            color: var(--text);
+        }
+        .status-tag {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+        .status-tag.online-tag {
+            background: #E8F8EF;
+            color: #27AE60;
+        }
+        .status-tag.offline-tag {
+            background: #F5F5F8;
+            color: #999;
+        }
+
+        /* ========== 分隔线 ========== */
+        .section-divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 8px 0 20px;
+            position: relative;
+            z-index: 1;
+        }
+        .section-divider .line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+        .section-divider .diamond {
+            width: 10px;
+            height: 10px;
+            background: var(--red);
+            transform: rotate(45deg);
+            border-radius: 2px;
+            flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(224, 58, 46, 0.4);
+            animation: sparkle 3s ease-in-out infinite;
+        }
+        @keyframes sparkle {
+            0%, 100% { box-shadow: 0 0 8px rgba(224, 58, 46, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(224, 58, 46, 0.7), 0 0 32px rgba(224, 58, 46, 0.25); }
+        }
+
+        /* ========== 第二部分：活动历史 ========== */
+        .activities-section {
+            position: relative;
+            z-index: 1;
+            width: 100vw;
+            margin-left: calc(-50vw + 50%);
+            margin-right: calc(-50vw + 50%);
+            padding: 0;
+        }
+        .activities-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 28px;
+        }
+        .section-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--red);
+            margin-bottom: 6px;
+        }
+        .section-label::before {
+            content: '';
+            width: 18px;
+            height: 3px;
+            background: var(--red);
+            border-radius: 2px;
+        }
+        .section-heading {
+            font-size: 1.9rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            margin-bottom: 24px;
+        }
+
+        /* 活动卡片 */
+        .activity-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 20px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .activity-card.expanded {
+            height: auto;
+            box-shadow: var(--shadow-lg);
+            border-color: #dcdce4;
+        }
+        .activity-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+        .activity-card-inner {
+            padding: 22px 26px 18px;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow: hidden;
+        }
+        .activity-card.expanded .activity-card-inner {
+            overflow: visible;
+            height: auto;
+        }
+        .activity-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 12px;
+            flex-shrink: 0;
+        }
+        .activity-card-title-area {
+            flex: 1;
+            min-width: 0;
+        }
+        .activity-card-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+        .activity-card-date {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .activity-card-date svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+        }
+        /* 年份标签 */
+        .year-badge {
+            flex-shrink: 0;
+            background: transparent;
+            color: rgba(224, 58, 46, 0.55);
+            font-weight: 900;
+            font-size: 2rem;
+            padding: 0;
+            border-radius: 0;
+            letter-spacing: 0.02em;
+            box-shadow: none;
+            white-space: nowrap;
+            line-height: 1;
+            margin-top: 2px;
+        }
+        /* 图片网格 */
+        .activity-images-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            flex-shrink: 0;
+            margin-bottom: 10px;
+        }
+        .activity-images-grid img {
+            width: 100%;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            background: #F0F0F5;
+            transition: all var(--transition);
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .activity-images-grid img:hover {
+            transform: scale(1.04);
+            border-color: var(--red);
+            box-shadow: 0 4px 16px rgba(224, 58, 46, 0.2);
+            z-index: 2;
+        }
+        .activity-images-grid img.extra-img {
+            display: none;
+        }
+        .activity-card.expanded .activity-images-grid img.extra-img {
+            display: block;
+        }
+        .activity-card.expanded .activity-images-grid {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        @media (max-width: 900px) {
+            .activity-images-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .activity-card.expanded .activity-images-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 500px) {
+            .activity-images-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
+            }
+            .activity-card.expanded .activity-images-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .year-badge {
+                font-size: 1.5rem;
+                padding: 0;
+            }
+        }
+        /* 摘要文字 */
+        .activity-summary {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            flex-shrink: 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .activity-card.expanded .activity-summary {
+            -webkit-line-clamp: unset;
+            display: block;
+            overflow: visible;
+        }
+        .activity-detail-desc {
+            display: none;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-top: 4px;
+            padding-top: 10px;
+            border-top: 1px dashed var(--border);
+        }
+        .activity-card.expanded .activity-detail-desc {
+            display: block;
+        }
+        /* 展开按钮 */
+        .activity-toggle-btn {
+            flex-shrink: 0;
+            align-self: flex-start;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 18px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--red);
+            background: var(--red-light);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all var(--transition);
+            letter-spacing: 0.02em;
+            margin-top: auto;
+        }
+        .activity-toggle-btn:hover {
+            background: #FFE0DB;
+            color: var(--red-dark);
+            transform: translateY(-1px);
+        }
+        .activity-toggle-btn:active {
+            transform: scale(0.96);
+        }
+        .activity-toggle-btn .arrow-icon {
+            transition: transform var(--transition);
+            display: inline-block;
+        }
+        .activity-card.expanded .activity-toggle-btn .arrow-icon {
+            transform: rotate(180deg);
+        }
+        .activity-toggle-btn .btn-text-expand { display: inline; }
+        .activity-toggle-btn .btn-text-collapse { display: none; }
+        .activity-card.expanded .activity-toggle-btn .btn-text-expand { display: none; }
+        .activity-card.expanded .activity-toggle-btn .btn-text-collapse { display: inline; }
+
+        /* 加载状态 */
+        .loading-placeholder {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .loading-spinner {
+            display: inline-block;
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin-bottom: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .no-activities {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background: #FAFAFC;
+            border-radius: var(--radius-lg);
+            border: 2px dashed var(--border);
+        }
+
+        /* ========== 第三部分：页尾 ========== */
+        .footer-section {
+            position: relative;
+            z-index: 1;
+            margin-top: 40px;
+            padding: 32px 0 40px;
+            border-top: 1px solid var(--border);
+        }
+        .footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 28px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .footer-brand {
+            flex: 0 0 260px;
+        }
+        .footer-brand-name {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+        .footer-brand-name .dot {
+            color: var(--red);
+        }
+        .footer-brand-desc {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+        .footer-links {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+        .footer-link-group h4 {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text);
+            margin-bottom: 8px;
+        }
+        .footer-link-group a {
+            display: block;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 3px 0;
+            transition: color var(--transition);
+        }
+        .footer-link-group a:hover {
+            color: var(--red);
+        }
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 16px 28px 0;
+            border-top: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+
+        /* ========== RWD ========== */
+        @media (max-width: 900px) {
+            .hero-section {
+                flex-direction: column;
+                gap: 24px;
+                padding: 24px 0 20px;
+            }
+            .hero-right {
+                flex: 0 0 auto;
+                width: 100%;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .activity-card {
+                height: auto;
+                min-height: 420px;
+            }
+            .activity-images-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
+            }
+            .footer-inner {
+                flex-direction: column;
+                gap: 20px;
+            }
+        }
+        @media (max-width: 500px) {
+            .hero-title {
+                font-size: 1.6rem;
+            }
+            .status-card {
+                padding: 10px 12px;
+                gap: 8px;
+            }
+            .activity-card-inner {
+                padding: 14px 14px 12px;
+            }
+            .activity-card-title {
+                font-size: 1.1rem;
+            }
+            .activity-images-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
+            }
+        }
+
+        /* ========== 图片灯箱 (简易) ========== */
+        .lightbox-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .lightbox-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .lightbox-overlay img {
+            max-width: 92vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            object-fit: contain;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+        .lightbox-overlay.active img {
+            transform: scale(1);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 28px;
+            font-size: 2rem;
+            color: #fff;
+            cursor: pointer;
+            z-index: 10000;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+        .lightbox-close:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 背景装饰 -->
+    <div class="bg-decoration bg-circle-1"></div>
+    <div class="bg-decoration bg-circle-2"></div>
+    <div class="bg-decoration bg-square-1"></div>
+    <div class="bg-decoration bg-square-2"></div>
+    <div class="bg-decoration bg-dot-1"></div>
+    <div class="bg-decoration bg-dot-2"></div>
+
+    <!-- 主要内容 -->
+    <div class="main-container">
+
+        <!-- ===== 第一部分：Hero ===== -->
+        <section class="hero-section" id="hero">
+            <!-- 左侧 -->
+            <div class="hero-left">
+                <div class="hero-logo-area">
+                    <h1 class="hero-title">
+                        欢迎来到 <span class="accent">ShinCraft</span>
+                    </h1>
+                </div>
+                <p class="hero-desc">
+                    一个以欢乐与创造为核心的 Minecraft 玩家社群服务器。我们定期举办精彩活动，无论你是生存高手、建筑达人，
+                    还是喜欢探索世界的冒险家，ShinCraft 都有属于你的舞台。
+                </p>
+                <div class="hero-tag-row">
+                    <span class="hero-tag tag-red">⚡ 24H 开放</span>
+                    <span class="hero-tag tag-blue">🎮 多种模式</span>
+                    <span class="hero-tag tag-gold">🌟 定期活动</span>
+                </div>
+            </div>
+            <!-- 右侧：服务器状态（动态渲染） -->
+            <div class="hero-right" id="server-list">
+                <!-- JS 动态填充 -->
+            </div>
+        </section>
+
+        <!-- 分隔线 -->
+        <div class="section-divider">
+            <span class="line"></span>
+            <span class="diamond"></span>
+            <span class="line"></span>
+        </div>
+
+        <!-- ===== 第二部分：服务器历史活动 ===== -->
+        <div class="activities-section" id="activities">
+            <div class="activities-inner">
+                <div class="section-label">服务器历史</div>
+                <div id="activities-container">
+                    <!-- 动态载入 -->
+                    <div class="loading-placeholder">
+                        <div class="loading-spinner"></div>
+                        <p>正在载入活动资料…</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== 第三部分：页尾 ===== -->
+        <footer class="footer-section" id="footer">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <div class="footer-brand-name">ShinCraft<span class="dot">.</span></div>
+                    <p class="footer-brand-desc">
+                        始于对 Minecraft 的热爱，我们打造了一个温暖的玩家社群。<br>
+                        无论新旧玩家，这里永远欢迎你。
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-link-group">
+                        <h4>服务器</h4>
+                        <a href="#hero">首页</a>
+                        <a href="#activities">活动历史</a>
+                        <a href="#footer">联系我们</a>
+                    </div>
+                    <div class="footer-link-group">
+                        <h4>联系方式</h4>
+                        <a>📧 1934747977@qq.com</a>
+                        <a href="https://qm.qq.com/q/jAHFs8nwC6" target="_blank" rel="noopener">💬 QQ 社群</a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                &copy; <span id="current-year">2026</span> ShinCraft. Made with ❤️ and blocks.
+            </div>
+        </footer>
+    </div>
+
+    <!-- 图片灯箱 -->
+    <div class="lightbox-overlay" id="lightbox">
+        <span class="lightbox-close" id="lightbox-close">&times;</span>
+        <img src="" alt="活动照片" id="lightbox-img">
+    </div>
+
+    <script>
+        (function() {
+            const CONFIG_URL = 'activity/index.json';
+            const ACTIVITY_BASE_PATH = 'activity/';
+            const IMAGE_EXTENSION = '.png';
+            const PREVIEW_IMAGE_COUNT = 8;
+
+            const serverList = document.getElementById('server-list');
+            const activitiesContainer = document.getElementById('activities-container');
+            const lightboxOverlay = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const lightboxClose = document.getElementById('lightbox-close');
+            const currentYearSpan = document.getElementById('current-year');
+
+            if (currentYearSpan) {
+                currentYearSpan.textContent = new Date().getFullYear();
+            }
+
+            // ============ 背景图片设置 ============
+            function applyBackgroundImage(imageUrl) {
+                const hero = document.querySelector('.hero-section');
+                const heroLeft = document.querySelector('.hero-left');
+                if (!hero) return;
+                if (imageUrl && imageUrl.trim() !== '') {
+                    hero.style.backgroundImage = `url('${imageUrl}')`;
+                    if (heroLeft) heroLeft.classList.add('has-bg');
+                } else {
+                    hero.style.backgroundImage = '';
+                    if (heroLeft) heroLeft.classList.remove('has-bg');
+                }
+            }
+
+            // ============ 渲染服务器状态卡片 ============
+            function renderServers(servers) {
+                if (!serverList) return;
+                if (!servers || servers.length === 0) {
+                    serverList.innerHTML = '<div style="padding:20px;color:var(--text-muted);text-align:center;">暂无服务器信息</div>';
+                    return;
+                }
+
+                let html = '';
+                servers.forEach(server => {
+                    const name = escapeHTML(server.name || '未知服务器');
+                    const icon = server.icon || '';
+                    const online = server.online === true;
+                    const statusText = server.statusText || (online ? '在线' : '离线');
+                    const statusClass = online ? 'online' : 'offline';
+                    const tagClass = online ? 'online-tag' : 'offline-tag';
+                    const indicatorClass = online ? 'online' : 'offline';
+
+                    // 处理地址（字符串或数组）
+                    let addresses = server.address;
+                    if (!addresses) {
+                        addresses = [];
+                    } else if (typeof addresses === 'string') {
+                        addresses = [addresses];
+                    }
+                    const addressHTML = addresses.map(addr => 
+                        `<span class="status-addr">${escapeHTML(addr)}</span>`
+                    ).join('');
+
+                    html += `
+                        <div class="status-card ${statusClass}">
+                            <span class="status-indicator ${indicatorClass}"></span>
+                            <div class="status-info">
+                                <div class="status-name">${icon ? icon + ' ' : ''}${name}</div>
+                                ${addressHTML}
+                            </div>
+                            <span class="status-tag ${tagClass}">${escapeHTML(statusText)}</span>
+                        </div>
+                    `;
+                });
+                serverList.innerHTML = html;
+            }
+
+            function escapeHTML(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ============ 图片灯箱 ============
+            function openLightbox(src) {
+                lightboxImg.src = src;
+                lightboxOverlay.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeLightbox() {
+                lightboxOverlay.classList.remove('active');
+                document.body.style.overflow = '';
+                setTimeout(() => { lightboxImg.src = ''; }, 300);
+            }
+
+            lightboxClose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeLightbox();
+            });
+            lightboxOverlay.addEventListener('click', function(e) {
+                if (e.target === lightboxOverlay || e.target === lightboxImg) {
+                    closeLightbox();
+                }
+            });
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && lightboxOverlay.classList.contains('active')) {
+                    closeLightbox();
+                }
+            });
+
+            // ============ 活动相关函数 ============
+            function formatDate(dateStr) {
+                try {
+                    const date = new Date(dateStr);
+                    const y = date.getFullYear();
+                    const m = date.getMonth() + 1;
+                    const d = date.getDate();
+                    const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                    const w = weekdays[date.getDay()];
+                    return `${y} 年 ${m} 月 ${d} 日（周${w}）`;
+                } catch (e) { return dateStr; }
+            }
+
+            function pad(num, size = 3) {
+                let s = String(num);
+                while (s.length < size) s = '0' + s;
+                return s;
+            }
+
+            function createActivityCard(activity, folderName) {
+                const imageCount = activity.imageCount || 0;
+                const hasMore = imageCount > PREVIEW_IMAGE_COUNT;
+                const cardId = `activity-card-${folderName}`;
+
+                let imagesHTML = '';
+                for (let i = 1; i <= imageCount; i++) {
+                    const imgSrc = `${ACTIVITY_BASE_PATH}${folderName}/${pad(i)}${IMAGE_EXTENSION}`;
+                    const extraClass = (i > PREVIEW_IMAGE_COUNT) ? ' extra-img' : '';
+                    imagesHTML += `<img src="${imgSrc}" alt="活动照片 ${i}" loading="lazy" class="activity-img${extraClass}" data-src="${imgSrc}" onerror="this.style.opacity='0.35';this.style.background='#e8e8ee';">`;
+                }
+
+                return `
+                <div class="activity-card" id="${cardId}" data-folder="${folderName}">
+                    <div class="activity-card-inner">
+                        <div class="activity-card-header">
+                            <div class="activity-card-title-area">
+                                <div class="activity-card-title">${escapeHTML(activity.title || '未命名活动')}</div>
+                                <div class="activity-card-date">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    ${escapeHTML(formatDate(activity.date || ''))}
+                                </div>
+                            </div>
+                            <span class="year-badge">${escapeHTML(activity.year || '----')}</span>
+                        </div>
+                        <div class="activity-images-grid">${imagesHTML}</div>
+                        <p class="activity-summary">${escapeHTML(activity.summary || '暂无简介')}</p>
+                        <div class="activity-detail-desc">${escapeHTML(activity.description || activity.summary || '暂无详细内容')}</div>
+                        <button class="activity-toggle-btn" data-card-id="${cardId}" ${imageCount === 0 && !activity.description ? 'style="display:none;"' : ''}>
+                            <span class="btn-text-expand">展开全部 ${hasMore ? '(' + imageCount + ' 张照片)' : ''}</span>
+                            <span class="btn-text-collapse">收起</span>
+                            <span class="arrow-icon">▾</span>
+                        </button>
+                    </div>
+                </div>`;
+            }
+
+            function bindToggleEvents() {
+                document.querySelectorAll('#activities-container .activity-toggle-btn').forEach(btn => {
+                    btn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const card = document.getElementById(this.dataset.cardId);
+                        if (!card) return;
+                        card.classList.toggle('expanded');
+                        if (!card.classList.contains('expanded')) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    });
+                });
+            }
+
+            function bindImageEvents() {
+                document.querySelectorAll('#activities-container .activity-img').forEach(img => {
+                    img.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        openLightbox(this.dataset.src || this.src);
+                    });
+                });
+            }
+
+            async function loadActivities(activityFolders) {
+                if (!activitiesContainer) return;
+                if (!activityFolders || activityFolders.length === 0) {
+                    activitiesContainer.innerHTML = '<div class="no-activities">📭 还没有任何活动记录，敬请期待！</div>';
+                    return;
+                }
+
+                const reversed = [...activityFolders].reverse();
+                const promises = reversed.map(async (folder) => {
+                    try {
+                        const resp = await fetch(`${ACTIVITY_BASE_PATH}${folder}/index.json`);
+                        if (!resp.ok) throw new Error('加载失败');
+                        return { folder, data: await resp.json() };
+                    } catch (err) {
+                        console.warn(`跳过活动文件夹 "${folder}":`, err.message);
+                        return null;
+                    }
+                });
+
+                const results = (await Promise.all(promises)).filter(r => r !== null);
+                if (results.length === 0) {
+                    activitiesContainer.innerHTML = '<div class="no-activities">📭 活动资料载入失败或尚无活动，请检查文件结构。</div>';
+                    return;
+                }
+
+                let html = '';
+                results.forEach(item => { html += createActivityCard(item.data, item.folder); });
+                activitiesContainer.innerHTML = html;
+                bindToggleEvents();
+                bindImageEvents();
+            }
+
+            // ============ 主加载函数 ============
+            async function loadConfigAndRender() {
+                try {
+                    const resp = await fetch(CONFIG_URL);
+                    if (!resp.ok) throw new Error('无法载入配置文件');
+                    const config = await resp.json();
+
+                    // 应用背景图
+                    applyBackgroundImage(config.backgroundImage);
+
+                    // 渲染服务器状态
+                    renderServers(config.servers);
+
+                    // 加载活动列表
+                    await loadActivities(config.activities);
+                } catch (err) {
+                    console.error('初始化失败:', err);
+                    if (serverList) serverList.innerHTML = '<div style="padding:20px;color:var(--text-muted);">服务器信息加载失败</div>';
+                    if (activitiesContainer) {
+                        activitiesContainer.innerHTML = `
+                        <div class="no-activities">
+                            ⚠️ 资料载入失败<br>
+                            <small>请确认 <code>activity/index.json</code> 文件存在且格式正确。</small>
+                        </div>`;
+                    }
+                }
+            }
+
+            // 启动
+            loadConfigAndRender();
+
+            // 全局图片加载错误处理
+            document.addEventListener('error', function(e) {
+                if (e.target.tagName === 'IMG' && e.target.classList.contains('activity-img')) {
+                    e.target.style.opacity = '0.35';
+                    e.target.style.background = '#e8e8ee';
+                    e.target.style.minHeight = '60px';
+                }
+            }, true);
+        })();
+    </script>
+</body>
+</html>
