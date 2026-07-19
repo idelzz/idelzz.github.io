@@ -1,0 +1,38 @@
+{
+  "description": "ShinCraft 主配置 - 包含服务器列表、背景图片及活动索引，backgroundImage可以留空，留空为白",
+  "backgroundImage": "",
+  "servers": [
+    {
+      "name": "生存服务器",
+      "icon": "🏰",
+      "address": ["mc.shincraft.fun", "210.16.166.114:25565"],
+      "online": true,
+      "statusText": "在线"
+    },
+    {
+      "name": "创造服务器",
+      "icon": "🎨",
+      "address": ["game.shincraft.fun", "mc22.rhymc.com:40066"],
+      "online": true
+    },
+    {
+      "name": "小游戏服务器",
+      "icon": "⚔️",
+      "address": ["ctm.shincraft.fun", "210.16.166.114:25568"],
+      "online": false,
+      "statusText": "维护中"
+    },
+    {
+      "name": "测试服务器",
+      "icon": "🌐",
+      "address": ["mod.shincraft.fun", "mc22.rhymc.com:40069"],
+      "online": false
+    }
+  ],
+  "activities": [
+    "001",
+    "002",
+    "003",
+    "004"
+  ]
+}
