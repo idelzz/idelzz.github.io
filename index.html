@@ -1,444 +1,1513 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no"/>
-    <link rel="shortcut icon" href="img/thiniceIco.ico">
-    <title>iCE Web 主页</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="图论可视化工具 Graph Visualization Tool，支持拖拽、重边、自环、计算最小生成树（Kruskal）与单源最短路（Dijkstra）、支持导出Markdown/PNG/SVG | Supports drag, multi-edges, self-loops, MST (Kruskal) & Dijkstra, export to Markdown/PNG/SVG">
+    <meta name="keywords" content="图论, 可视化, 力导向图, D3.js, 最小生成树, Kruskal, 单源最短路, Dijkstra, 边权, 重边, 自环, SVG导出, PNG导出, Markdown导出, graph theory, visualization, force-directed graph, D3.js, minimal, black-white, minimum spanning tree, Kruskal, single-source shortest path, Dijkstra, edge weight, multiple edges, self-loop, SVG export, PNG export, Markdown export">
+    <meta name="author" content="idelzz">
+    <title>图论可视化绘制工具 Graph Visualization Tool</title>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
+    </script>
     <style>
+        :root {
+            --black: #000;
+            --white: #fff;
+            --light-gray: #e8e8e8;
+            --mid-gray: #ccc;
+            --dark-gray: #444;
+            --error-red: #c00;
+            --mst-red: #d32f2f;
+            --dijkstra-blue: #1976d2;
+            --dim-gray: #b0b0b0;
+            --font-stack: 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html,
         body {
-            margin: 0;
-            font-size: 16px;
-            font-family: '微软雅黑';
-            background-color: #fafafa;
-            overflow-y: scroll;
-        }
-
-        .card {
-            min-width: 10px;
-            min-height: 10px;
-            padding: 16px;
-            color: #646464;
-            box-shadow: 0 0 25px rgba(36, 37, 38, 0.1);
-            background-color: #FFFFFF;
-            border-radius: 25px;
-        }
-
-        .card h1 {
-            margin: 20px;
-        }
-
-        @font-face {
-            font-family: 'iconfont';
-            src: url('./icon/iconfont.ttf?t=1628414370915') format('truetype');
-        }
-
-        .iconfont {
-            font-family: "iconfont", system-ui !important;
-            font-weight: bold;
-            font-style: normal;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        header {
-            height: 59px;
             width: 100%;
-            background-color: white;
-            box-shadow: 0 0 25px rgba(36, 37, 38, 0.1);
-            /*动画*/
-            transition: all 0.5s cubic-bezier(0, 1, 0, 1) 0s;
-            position: relative;
-            top: -200px;
-        }
-
-        a {
-            /* 链接 */
-            color: black;
-            text-decoration: none;
-            transition: color 0.2s linear 0s;
-        }
-
-        a:hover {
-            color: #2B5CFF;
-        }
-
-        nav {
-            /* 导航栏 */
-            display: inline-block;
             height: 100%;
-            width: 35%;
-            min-width: 130px;
-        }
-
-        nav a {
-
-            display: inline-block;
-            padding-left: 10px;
-            padding-right: 10px;
-            height: 54px;
-            margin-right: 5%;
-            line-height: 59px;
-        }
-
-        #focusA {
-            /* 当前导航选项的蓝色底 */
-            border-bottom: #2B5CFF solid 5px;
-        }
-
-        #logo {
-            /* logo */
-            float: left;
-            height: 100%;
-            margin-left: 5%;
-            margin-right: 5%;
-        }
-
-        #searchIndex {
-            /* 搜索键 */
-            float: right;
-            margin-top: 11px;
-            padding: 8px 18px;
-            font-size: 14px;
-            background-color: #e9e9e9;
-            border-radius: 25px;
-            transition: all 0.2s linear 0s;
-        }
-
-        #searchIndex:hover {
-            /* 搜索键 */
-            color: #2B5CFF;
-            background-color: #e9eff6;
-        }
-
-        .clickable {
-            /* 能够被点击的键 */
-            cursor: pointer;
-        }
-
-        #avatarBox {
-            /* 头像容器 */
-            float: right;
-            margin: 5px 3% auto 1%;
-            height: 39px;
-            width: 39px;
-            padding: 0;
-            background-image: url("avatar/noneAvatar.jpg");
-            background-size: auto 100%;
-            border-radius: 50%;
-            border: white solid 3px;
-            box-shadow: 2px 2px 18px rgba(0, 0, 0, 0.1);
             overflow: hidden;
-            transition: all 0.2s linear 0s;
+            font-family: var(--font-stack);
+            background: var(--white);
+            color: var(--black);
+            font-size: 14px;
         }
-
-        #avatarBox:hover {
-            /* 头像容器 */
-            border-color: #2B5CFF;
-        }
-
-        #centerBox {
-            width: 1200px;
-            padding: 10px;
-            margin: 20px auto 20px auto;
-            height: 500px;
-        }
-
-        #load1 {
+        .app-container {
+            display: flex;
             width: 100%;
-            margin-top: 5.5%;
+            height: 100vh;
+            overflow: hidden;
         }
-
-        #bigSec {
-            display: inline-block;
-            width: 49%;
-            padding: 0;
+        .dashboard {
+            flex: 0 0 30%;
+            min-width: 280px;
+            max-width: 420px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid var(--black);
+            background: var(--white);
+            padding: 16px;
+            gap: 12px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+        .dashboard h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--black);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .dashboard label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .input-area {
+            flex: 1;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+        }
+        .input-area textarea {
+            flex: 1;
+            min-height: 140px;
+            resize: vertical;
+            padding: 10px;
+            font-family: 'Courier New', Consolas, monospace;
+            font-size: 0.85rem;
+            border: 2px solid var(--black);
+            border-radius: 0;
+            background: var(--white);
+            color: var(--black);
+            outline: none;
+            white-space: pre;
+        }
+        .input-area textarea:focus {
+            border-color: var(--black);
+            box-shadow: 0 0 0 1px var(--black);
+        }
+        .mode-group {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+            padding: 4px 0;
+        }
+        .mode-group input[type="radio"] {
+            accent-color: var(--black);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            margin-right: 4px;
+        }
+        .mode-group label {
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
             margin: 0;
-            height: 330px;
-            border: white solid 5px;
-            border-radius: 10px;
-            background-size: 102%;
-            box-shadow: 2px 2px 18px rgba(0, 0, 0, 0.1);
-            /*动画*/
-            position: relative;
-            transition: all 2s cubic-bezier(0, 1, 0, 1) 0s;
-            opacity: 0;
-            top: 100px;
         }
-
-        #bigSec:hover {
-            transform: scale(1.1);
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 0;
         }
-
-        #smallSecBox {
-            float: right;
-            width: 50%;
-            padding: 0;
-            margin: 0;
-            height: 340px;
-        }
-
-        .smallSec {
-            float: right;
-            width: 258px;
-            padding: 5px;
-            height: 140px;
-            border: white solid 5px;
-            border-radius: 10px;
-            background-color: white;
-            box-shadow: 2px 2px 18px rgba(0, 0, 0, 0.1);
-            background-size: 102%;
-            background-position: center;
-            /*动画*/
-            position: relative;
-            transition: all 2s cubic-bezier(0, 1, 0, 1) 0s;
-            opacity: 0;
-            top: 50px;
-        }
-
-        #load0 {
-            height: 1000px;
-            transition: all 1s cubic-bezier(0, 1, 0, 1) 0s;
-        }
-
-        #load0text p, #load0text h3, #load0text ul {
-            margin-left: 30px;
-        }
-
-        footer {
-            position: fixed;
-            bottom: -200px;
-            height: 60px;
-            width: 90%;
-            padding: 30px 5% 0 5%;
-            color: #888888;
-            background-color: white;
-            box-shadow: 0 0 25px rgba(36, 37, 38, 0.1);
-            /*动画*/
-            transition: all 0.5s cubic-bezier(0, 1, 0, 1) 0s;
-        }
-
-        .button {
-
-        }
-
-        .button:hover {
-            transform: scale(1.1);
+        .checkbox-group input[type="checkbox"] {
+            accent-color: var(--black);
+            width: 16px;
+            height: 16px;
             cursor: pointer;
         }
-
-        #smallSec1 {
-            margin-left: 20px;
+        .checkbox-group label {
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin: 0;
         }
-
-        #smallSec3 {
-            margin-left: 20px;
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
         }
-
-        @media screen and (min-width: 1100px) {
-            .minScreen {
-                display: none;
-            }
-
-            #bigSec:hover {
-                transform: translateX(-30px) scale(1.1);
-            }
+        .zoom-control label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin: 0;
+            white-space: nowrap;
         }
-
-        @media screen and (max-width: 1100px) {
-            /*窄荧幕界面*/
-            #searchIndex {
-                display: none;
-            }
-
-            #centerBox {
-                width: 95%;
-            }
-
-            #bigSec {
-                width: 340px;
-                height: 196px;
-                display: block;
-                margin: auto;
-            }
-
-            #smallSecBox {
-                width: 350px;
-                float: none;
-                margin: 20px auto;
-            }
-
-            .smallSec {
-                float: none;
-                display: inline-block;
-                width: 150px;
-                height: 80px;
-            }
-
-            #smallSec1 {
-                margin: auto 3px auto 0;
-            }
-
-            #smallSec3 {
-                margin: auto 3px auto 0;
-            }
+        .zoom-control input[type="range"] {
+            flex: 1;
+            accent-color: var(--black);
+            height: 4px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--mid-gray);
+            border-radius: 2px;
+        }
+        .zoom-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--black);
+            cursor: pointer;
+            border: 2px solid var(--white);
+            box-shadow: 0 0 0 1px var(--black);
+        }
+        .zoom-value {
+            font-weight: 700;
+            min-width: 36px;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+        .btn {
+            background: var(--black);
+            color: var(--white);
+            border: 2px solid var(--black);
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.25s ease;
+            text-transform: uppercase;
+            border-radius: 0;
+            width: 100%;
+        }
+        .btn:hover {
+            background: var(--white);
+            color: var(--black);
+            border-color: var(--black);
+        }
+        .btn:active {
+            background: var(--light-gray);
+            color: var(--black);
+        }
+        .export-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        .export-group .btn {
+            padding: 8px 10px;
+            font-size: 0.75rem;
+        }
+        .error-display {
+            min-height: 22px;
+            font-size: 0.8rem;
+            color: var(--error-red);
+            font-weight: 600;
+            padding: 4px 0;
+            word-break: break-all;
+            border-top: 1px dashed var(--mid-gray);
+            padding-top: 8px;
+        }
+        .copyright {
+            font-size: 0.72rem;
+            text-align: center;
+            color: var(--dark-gray);
+            border-top: 1px solid var(--mid-gray);
+            padding-top: 10px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .canvas-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+            background: var(--white);
+            overflow: hidden;
+        }
+        .canvas-container svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        .canvas-container svg:active {
+            cursor: grabbing;
+        }
+        .node-circle {
+            fill: var(--white);
+            stroke: var(--black);
+            stroke-width: 2px;
+            transition: fill 0.2s ease;
+            cursor: pointer;
+        }
+        .node-circle:hover {
+            fill: var(--light-gray);
+        }
+        .node-text {
+            font-size: 12px;
+            font-weight: 600;
+            fill: var(--black);
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            user-select: none;
+        }
+        .edge-line {
+            stroke: var(--black);
+            stroke-width: 1.5px;
+            fill: none;
+            cursor: pointer;
+            transition: stroke-width 0.15s ease;
+        }
+        .edge-line:hover {
+            stroke-width: 2.5px;
+        }
+        .edge-path {
+            stroke: var(--black);
+            stroke-width: 1.5px;
+            fill: none;
+            cursor: pointer;
+            transition: stroke-width 0.15s ease;
+        }
+        .edge-path:hover {
+            stroke-width: 2.5px;
+        }
+        .edge-label {
+            font-size: 10px;
+            fill: var(--black);
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            user-select: none;
+            font-weight: 600;
+        }
+        .arrow-marker {
+            fill: var(--black);
+        }
+        .self-loop-arrow {
+            fill: var(--black);
+            stroke: var(--black);
+            stroke-width: 0.5px;
+        }
+        .node-popup {
+            position: absolute;
+            bottom: 30px;
+            right: 20px;
+            background: var(--white);
+            border: 2px solid var(--black);
+            padding: 12px;
+            min-width: 240px;
+            max-width: 340px;
+            max-height: 500px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+            font-size: 0.85rem;
+            display: none;
+            pointer-events: auto;
+        }
+        .node-popup.active {
+            display: block;
+        }
+        .node-popup h3 {
+            font-size: 1rem;
+            margin-bottom: 6px;
+            border-bottom: 1px solid var(--mid-gray);
+            padding-bottom: 4px;
+        }
+        .node-popup .popup-stats {
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .node-popup .popup-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin: 8px 0 4px 0;
+            padding: 8px 0 4px 0;
+            border-top: 1px solid var(--mid-gray);
+        }
+        .node-popup .popup-actions .popup-btn {
+            background: var(--white);
+            border: 1.5px solid var(--black);
+            padding: 5px 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            border-radius: 0;
+            flex: 1;
+            min-width: 70px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .node-popup .popup-actions .popup-btn:hover {
+            background: var(--black);
+            color: var(--white);
+        }
+        .node-popup .popup-actions .popup-btn.clear-btn:hover {
+            background: var(--error-red);
+            color: var(--white);
+            border-color: var(--error-red);
+        }
+        .node-popup .popup-result {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 4px 0;
+            min-height: 20px;
+            word-break: break-all;
+            color: var(--dark-gray);
+        }
+        .node-popup .edge-list {
+            margin-top: 4px;
+            padding-top: 4px;
+            font-size: 0.75rem;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .node-popup .edge-list div {
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+        .distance-list {
+            margin-top: 4px;
+            padding-top: 4px;
+            font-size: 0.75rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        .distance-list div {
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+        .edge-highlight-mst {
+            stroke: var(--mst-red) !important;
+            stroke-width: 3px !important;
+        }
+        .edge-highlight-dijkstra {
+            stroke: var(--dijkstra-blue) !important;
+            stroke-width: 3px !important;
+        }
+        .edge-dimmed {
+            stroke: var(--dim-gray) !important;
+            stroke-width: 1px !important;
+            opacity: 0.5 !important;
+        }
+        .label-highlight-mst {
+            fill: var(--mst-red) !important;
+        }
+        .label-highlight-dijkstra {
+            fill: var(--dijkstra-blue) !important;
+        }
+        .label-dimmed {
+            fill: var(--dim-gray) !important;
+            opacity: 0.5 !important;
+        }
+        .node-highlight-mst {
+            stroke: var(--mst-red) !important;
+            stroke-width: 3px !important;
+        }
+        .node-highlight-dijkstra {
+            stroke: var(--dijkstra-blue) !important;
+            stroke-width: 3px !important;
+        }
+        .node-highlight-source {
+            stroke: var(--dijkstra-blue) !important;
+            stroke-width: 4px !important;
+            fill: #e3f2fd !important;
+        }
+        .node-dimmed {
+            stroke: var(--dim-gray) !important;
+            opacity: 0.5 !important;
         }
     </style>
 </head>
 <body>
-<header>
-    <a href="1.php" ><img id="logo" src="img/thiniceLogo.svg" alt="ice logo"/></a>
-    <nav>
-        <a class="nav" id="focusA" href="javascript:changeIndex();">首页</a>
-        <a class="nav" href="./" style="display: none">待定</a>
-        <a class="nav" href="./" style="display: none">待定</a>
-        <a class="nav" href="javascript:changeInfo();">关于</a>
-    </nav>
-    <div id="avatarBox" onclick="accountSetting()" class="clickable"></div>
-    <div id="searchIndex" class="clickable" onclick='notIndex()'>
-        搜索&nbsp;&nbsp;<span class="iconfont">&#xe63c;</span>
-    </div>
-</header>
-
-<div id="centerBox">
-    <div id="load0" class="card" style="display:none">
-        <div id="load0text">
-            <h1>关于丨info</h1>
-            <p>
-                <strong class="minScreen">检测到您是移动端设备，已自动设定宽高样式!</strong><br class="minScreen"/><br
-                        class="minScreen"/>
-                欢迎来到新iCE Web，该页面由iCE CUBE开发<br/><br class="minScreen"/>
-                iCE Web已开发出账号系统，但因服务器条件暂时停止该功能，请期待后续更新。
-            </p>
-            <h1>更新日志</h1>
-            <h3>2022/11/25更新预告</h3>
-            <ul>
-                <li>账号系统页面更新</li>
-                <li>THINICE表单框架构建完成</li>
-            </ul>
-            <h3>2022/11/25更新内容</h3>
-            <ul>
-                <li>主页面，账号系统页面焕然一新</li>
-                <li>给所有页面添加了动画</li>
-            </ul>
-            <h1>关于站长</h1>
-            <iframe width="100%" height="500px" src="https://kdocs.cn/l/cnsCfSAFsPLR"></iframe>
+    <div class="app-container">
+        <div class="dashboard">
+            <h1>图论可视化 Algorithm Graph</h1>
+            <div class="input-area">
+                <label for="dataInput">数据输入（第一行顶点数N，后续每行 u v [w]，按Enter自动更新）</label>
+                <textarea id="dataInput" rows="8">13
+1 2
+2 3
+3 4
+4 6
+6 7
+8 9
+9 10
+11 12
+12 13</textarea>
+            </div>
+            <div>
+                <label>图模式</label>
+                <div class="mode-group">
+                    <label><input type="radio" name="graphMode" value="undirected" checked> 无向图</label>
+                    <label><input type="radio" name="graphMode" value="directed"> 有向图</label>
+                </div>
+            </div>
+            <div class="checkbox-group">
+                <input type="checkbox" id="zeroBasedCheckbox">
+                <label for="zeroBasedCheckbox">节点编号从0开始（默认1~N）</label>
+            </div>
+            <div class="zoom-control">
+                <label>缩放</label>
+                <input type="range" id="zoomSlider" min="0.1" max="3.0" step="0.05" value="1.0">
+                <span class="zoom-value" id="zoomDisplay">1.0</span>
+            </div>
+            <button class="btn" id="renderBtn">渲染 / 更新</button>
+            <div>
+                <label>导出</label>
+                <div class="export-group">
+                    <button class="btn" id="exportSvgBtn">SVG</button>
+                    <button class="btn" id="exportPngBtn">PNG</button>
+                    <button class="btn" id="exportMdBtn">Markdown</button>
+                </div>
+            </div>
+            <div class="error-display" id="errorDisplay"></div>
+            <div class="copyright" id="copyrightText"></div>
+        </div>
+        <div class="canvas-container" id="canvasContainer">
+            <svg id="graphSvg"></svg>
+            <div class="node-popup" id="nodePopup">
+                <h3 id="popupTitle">节点详情</h3>
+                <div class="popup-stats" id="popupStats"></div>
+                <div class="popup-actions">
+                    <button class="popup-btn" id="mstBtn">最小生成树</button>
+                    <button class="popup-btn" id="dijkstraBtn">单源最短路</button>
+                    <button class="popup-btn clear-btn" id="clearHighlightBtn">清除</button>
+                </div>
+                <div class="popup-result" id="popupResult"></div>
+                <div class="distance-list" id="distanceList"></div>
+                <div class="edge-list" id="popupEdgeList"></div>
+            </div>
         </div>
     </div>
-    <div id="load1">
-        <div id="bigSec" class="button" style="background-image: url('img/oldIceWeb.png')"
-             onclick=window.open("oldWeb","_self")></div>
 
-        <div id="smallSecBox">
-            <a href="https://www.bilibili.com/video/BV1X34y1p7sj">
-                <div class="smallSec button" id="smallSec1" style="background-image:url('img/i1.jpg');"></div>
-            </a>
-            <a href="https://www.bilibili.com/video/BV1h84y1i7Am">
-                <div class="smallSec button" style="background-image: url('img/i2.jpg');"></div>
-            </a>
-            <a href="official/register.html">
-                <div class="smallSec button" id="smallSec3"
-                     style=";margin-top:20px;background-image: url('img/i4.png');"></div>
-            </a>
-            <a href="javascript:changeInfo();">
-                <div class="smallSec button" style="margin-top:20px;background-image:url('img/i3.png');"></div>
-            </a>
+    <script>
+        (function() {
+            'use strict';
 
-        </div>
-    </div>
-</div>
-<footer>
-    <span style="float:right;color:#888888">© 2020-2022 iCE Studio.</span>
-    <a class="clickable" style="color:#888888"
-       href="https://qm.qq.com/cgi-bin/qm/qr?k=HrnWZbONqp_B0AnK5KU_QXiejar89y5H&noverify=0&personal_qrcode_source=3">联系站长</a>
-</footer>
+            // ==================== 全局状态 ====================
+            let nodesData = [];
+            let edgesData = [];
+            let classifiedEdgesData = [];
+            let simulation = null;
+            let zoomBehavior = null;
+            let currentZoomTransform = d3.zoomIdentity;
+            let gContainer = null;
+            let svgWidth = 0,
+                svgHeight = 0;
+            let activeNodeId = null;
 
-<!--if (isset($_SESSION["admin"]) && $_SESSION["admin"] === true) {
-    if ($_SESSION['avatarId'] != null) {
-        echo '
-                    <script>
-                        let oAvatarBox = document.getElementById("avatarBox");
-                        oAvatarBox.style.backgroundImage="url(\'avatar/' . $_SESSION['avatarId'] . '\')";
-                        function accountSetting(){
-                            window.open("official/login.html", "_self");
-                        }
-                    </script>
-                    ';
-    }
-} else {
-    echo '
-                <script>
-                    function accountSetting(){
-                        window.open("official/login.html", "_self");
+            let edgeSelectionsGlobal = [];
+            let labelSelectionsGlobal = [];
+            let nodeSelectionsGlobal = null;
+            let nodeTextsGlobal = null;
+
+            let highlightState = { type: null, edgeIndices: new Set(), nodeIndices: new Set(), sourceNode: null };
+            let lastAlgorithmResult = null;
+
+            const NODE_RADIUS = 20;
+            const EDGE_STROKE_WIDTH = 1.5;
+            const BEZIER_OFFSET_STEP = 28;
+            const SELF_LOOP_RADIUS = 36;
+            const SELF_LOOP_HEIGHT = 28;
+            const ARROW_REF_X = 26;
+
+            // ==================== DOM 引用 ====================
+            const svg = d3.select('#graphSvg');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const dataInput = document.getElementById('dataInput');
+            const renderBtn = document.getElementById('renderBtn');
+            const errorDisplay = document.getElementById('errorDisplay');
+            const zeroBasedCheckbox = document.getElementById('zeroBasedCheckbox');
+            const zoomSlider = document.getElementById('zoomSlider');
+            const zoomDisplay = document.getElementById('zoomDisplay');
+            const nodePopup = document.getElementById('nodePopup');
+            const popupTitle = document.getElementById('popupTitle');
+            const popupStats = document.getElementById('popupStats');
+            const popupEdgeList = document.getElementById('popupEdgeList');
+            const popupResult = document.getElementById('popupResult');
+            const distanceList = document.getElementById('distanceList');
+            const mstBtn = document.getElementById('mstBtn');
+            const dijkstraBtn = document.getElementById('dijkstraBtn');
+            const clearHighlightBtn = document.getElementById('clearHighlightBtn');
+            const exportSvgBtn = document.getElementById('exportSvgBtn');
+            const exportPngBtn = document.getElementById('exportPngBtn');
+            const exportMdBtn = document.getElementById('exportMdBtn');
+            const graphModeRadios = document.querySelectorAll('input[name="graphMode"]');
+            const copyrightText = document.getElementById('copyrightText');
+
+            // ==================== 工具函数 ====================
+            function showError(msg) { errorDisplay.textContent = msg || ''; }
+
+            function clearError() { errorDisplay.textContent = ''; }
+
+            function updateSvgSize() {
+                const rect = canvasContainer.getBoundingClientRect();
+                svgWidth = rect.width;
+                svgHeight = rect.height;
+                svg.attr('width', svgWidth).attr('height', svgHeight).attr('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+                return { width: svgWidth, height: svgHeight };
+            }
+
+            function parseInputData(text) {
+                const errors = [];
+                const lines = text.split('\n').filter(line => line.trim() !== '' && !line.trim().startsWith('#'));
+                if (lines.length === 0) return { nodes: [], edges: [], errors: ['请输入数据'] };
+                const nVal = parseInt(lines[0].trim(), 10);
+                if (isNaN(nVal) || nVal <= 0) return { nodes: [], edges: [], errors: ['第一行必须是正整数'] };
+                const N = nVal;
+                if (N > 500) return { nodes: [], edges: [], errors: ['顶点数过大（最大500）'] };
+                const nodes = [];
+                for (let i = 0; i < N; i++) nodes.push({ id: i, label: String(i + 1) });
+                const edges = [];
+                for (let lineIdx = 1; lineIdx < lines.length; lineIdx++) {
+                    const line = lines[lineIdx].trim();
+                    if (!line || line.startsWith('#')) continue;
+                    const match = line.match(/^\s*(\d+)\s*[,，\s]\s*(\d+)(?:\s*[,，\s]\s*([\d.]+))?\s*$/);
+                    if (!match) { errors.push(`第${lineIdx+1}行格式错误`);
+                        continue; }
+                    const u = parseInt(match[1], 10);
+                    const v = parseInt(match[2], 10);
+                    const w = match[3] !== undefined ? parseFloat(match[3]) : 1.0;
+                    if (u < 1 || v < 1 || u > N || v > N) { errors.push(`第${lineIdx+1}行端点越界`);
+                        continue; }
+                    edges.push({ source: u - 1, target: v - 1, weight: w, rawU: u, rawV: v, _explicitWeight: match[3] !==
+                            undefined });
+                }
+                return { nodes, edges, errors, N };
+            }
+
+            function classifyEdges(edges, isDirected) {
+                const groups = new Map();
+                const classified = [];
+                edges.forEach((edge, idx) => {
+                    const s = edge.source,
+                        t = edge.target;
+                    const isSelfLoop = (s === t);
+                    let key = isDirected ? `${s}-${t}` : `${Math.min(s,t)}-${Math.max(s,t)}`;
+                    if (!groups.has(key)) groups.set(key, []);
+                    const group = groups.get(key);
+                    const groupIndex = group.length;
+                    group.push(idx);
+                    classified.push({ ...edge, isSelfLoop, groupKey: key, groupIndex, groupSize: 0 });
+                });
+                for (const key of groups.keys()) {
+                    const group = groups.get(key);
+                    group.forEach(edgeIdx => classified[edgeIdx].groupSize = group.length);
+                }
+                return classified;
+            }
+
+            function computeBezierPath(sourceNode, targetNode, groupIndex, groupSize) {
+                const sx = sourceNode.x,
+                    sy = sourceNode.y,
+                    tx = targetNode.x,
+                    ty = targetNode.y;
+                const mx = (sx + tx) / 2,
+                    my = (sy + ty) / 2;
+                const dx = tx - sx,
+                    dy = ty - sy,
+                    len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const nx = -dy / len,
+                    ny = dx / len;
+                const offset = (groupIndex - (groupSize - 1) / 2) * BEZIER_OFFSET_STEP;
+                const cx = mx + nx * offset,
+                    cy = my + ny * offset;
+                return `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`;
+            }
+
+            function computeSelfLoopPath(node) {
+                const cx = node.x,
+                    cy = node.y,
+                    r = NODE_RADIUS;
+                const startX = cx + r * 0.85,
+                    startY = cy - r * 0.25;
+                const endX = cx - r * 0.85,
+                    endY = cy - r * 0.25;
+                const ctrlX1 = cx + SELF_LOOP_RADIUS,
+                    ctrlY1 = cy - SELF_LOOP_HEIGHT * 2.2;
+                const ctrlX2 = cx - SELF_LOOP_RADIUS,
+                    ctrlY2 = cy - SELF_LOOP_HEIGHT * 2.2;
+                return { path: `M ${startX} ${startY} C ${ctrlX1} ${ctrlY1}, ${ctrlX2} ${ctrlY2}, ${endX} ${endY}`,
+                    labelPos: { x: cx, y: cy - SELF_LOOP_HEIGHT * 2.2 - 6 } };
+            }
+
+            function createSimulation(nodes, edges) {
+                const { width, height } = updateSvgSize();
+                const nodeCount = nodes.length;
+                const chargeStrength = nodeCount > 50 ? -600 : -350;
+                const collideRadius = nodeCount > 50 ? 30 : 26;
+                const linkDistance = nodeCount > 50 ? 120 : 100;
+                const sim = d3.forceSimulation(nodes)
+                    .force('charge', d3.forceManyBody().strength(chargeStrength))
+                    .force('link', d3.forceLink(edges).id(d => d.id).distance(linkDistance).strength(0.6))
+                    .force('collide', d3.forceCollide().radius(collideRadius))
+                    .force('center', d3.forceCenter(width / 2, height / 2))
+                    .force('x', d3.forceX(width / 2).strength(0.03))
+                    .force('y', d3.forceY(height / 2).strength(0.03));
+                const radius = Math.min(width, height) * 0.3;
+                nodes.forEach((node, i) => {
+                    const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
+                    node.x = width / 2 + radius * Math.cos(angle);
+                    node.y = height / 2 + radius * Math.sin(angle);
+                    node.vx = 0;
+                    node.vy = 0;
+                });
+                return sim;
+            }
+
+            function renderGraph(parsedData) {
+                const { nodes, edges } = parsedData;
+                nodesData = nodes;
+                edgesData = edges;
+
+                const isDirected = getCurrentGraphMode() === 'directed';
+                classifiedEdgesData = classifyEdges(edges, isDirected);
+
+                highlightState = { type: null, edgeIndices: new Set(), nodeIndices: new Set(), sourceNode: null };
+                lastAlgorithmResult = null;
+                updatePopupResultText();
+
+                if (simulation) { simulation.stop();
+                    simulation = null; }
+                svg.selectAll('*').remove();
+                const { width, height } = updateSvgSize();
+
+                const defs = svg.append('defs');
+                defs.append('marker').attr('id', 'arrowhead').attr('viewBox', '0 -5 10 10').attr('refX', ARROW_REF_X).attr(
+                        'refY', 0).attr('markerWidth', 7).attr('markerHeight', 7).attr('orient', 'auto')
+                    .append('path').attr('d', 'M0,-5 L10,0 L0,5').attr('class', 'arrow-marker').attr('fill', '#000');
+                defs.append('marker').attr('id', 'arrowhead-selfloop').attr('viewBox', '0 -5 10 10').attr('refX', 4).attr(
+                        'refY', 0).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto')
+                    .append('path').attr('d', 'M0,-5 L10,0 L0,5').attr('class', 'arrow-marker').attr('fill', '#000');
+
+                gContainer = svg.append('g');
+
+                if (nodes.length > 0) simulation = createSimulation(nodes, edges);
+
+                const edgeGroup = gContainer.append('g').attr('class', 'edges-group');
+                const edgeSelections = [];
+                classifiedEdgesData.forEach((edge, idx) => {
+                    if (edge.isSelfLoop) {
+                        const pathEl = edgeGroup.append('path').attr('class', 'edge-path').attr('data-edge-idx', idx)
+                            .attr('fill', 'none').attr('stroke', '#000').attr('stroke-width', EDGE_STROKE_WIDTH);
+                        if (isDirected) pathEl.attr('marker-end', 'url(#arrowhead-selfloop)');
+                        edgeSelections.push({ type: 'selfloop', element: pathEl, edge, idx });
+                    } else if (edge.groupSize > 1) {
+                        const pathEl = edgeGroup.append('path').attr('class', 'edge-path').attr('data-edge-idx', idx)
+                            .attr('fill', 'none').attr('stroke', '#000').attr('stroke-width', EDGE_STROKE_WIDTH);
+                        if (isDirected) pathEl.attr('marker-end', 'url(#arrowhead)');
+                        edgeSelections.push({ type: 'bezier', element: pathEl, edge, idx });
+                    } else {
+                        const lineEl = edgeGroup.append('line').attr('class', 'edge-line').attr('data-edge-idx', idx)
+                            .attr('stroke', '#000').attr('stroke-width', EDGE_STROKE_WIDTH);
+                        if (isDirected) lineEl.attr('marker-end', 'url(#arrowhead)');
+                        edgeSelections.push({ type: 'line', element: lineEl, edge, idx });
                     }
-                </script>
-            ';
-}-->
+                });
 
-<script>
-    setTimeout("animalIndexStart()", 1);
-    var oHeader = document.getElementsByTagName("header");
-    var oBigSec = document.getElementById("bigSec");
-    var oFooter = document.getElementsByTagName("footer");
-    var oSmallSec = document.getElementsByClassName("smallSec");
-    var oNav = document.getElementsByClassName("nav");
-    var oLoad0 = document.getElementById("load0");
-    var oLoad0text = document.getElementById("load0text");
+                const labelGroup = gContainer.append('g').attr('class', 'edge-labels-group');
+                const labelSelections = [];
+                classifiedEdgesData.forEach((edge, idx) => {
+                    const showWeight = edge.weight !== 1.0 || edge._explicitWeight === true;
+                    if (showWeight) {
+                        const labelEl = labelGroup.append('text').attr('class', 'edge-label').attr('data-edge-idx', idx)
+                            .text(String(edge.weight));
+                        labelSelections.push({ element: labelEl, edge, idx });
+                    } else {
+                        labelSelections.push({ element: null, edge, idx });
+                    }
+                });
 
-    function animalIndexStart() {
-        oHeader[0].style.top = "0";
-        oBigSec.style.opacity = "1";
-        oBigSec.style.top = "0";
-        oFooter[0].style.opacity = "1";
-        oFooter[0].style.bottom = "0";
-        setTimeout("oLoad0.style.marginTop=\"100px\";oLoad0.style.opacity=\"0\";", 100);
-        setTimeout("smallSecStart(1)", 1);
-        setTimeout("smallSecStart(2)", 300);
-        setTimeout("smallSecStart(0)", 100);
-        setTimeout("smallSecStart(3)", 200);
-    }
+                const nodeGroup = gContainer.append('g').attr('class', 'nodes-group');
+                const nodeSelections = nodeGroup.selectAll('g.node-group').data(nodes).enter().append('g')
+                    .attr('class', 'node-group').attr('data-node-id', d => d.id);
+                nodeSelections.append('circle').attr('class', 'node-circle').attr('r', NODE_RADIUS).attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+                const nodeTexts = nodeSelections.append('text').attr('class', 'node-text').attr('x', d => d.x).attr('y', d =>
+                    d.y)
+                    .text(d => zeroBasedCheckbox.checked ? String(d.id) : String(d.id + 1));
 
-    function animalIndexOut() {
-        oBigSec.style.opacity = "0";
-        oBigSec.style.top = "100px";
-        setTimeout("oLoad0.style.marginTop=\"0\";oLoad0.style.opacity=\"1\";", 200);
-        setTimeout("smallSecOut(1)", 60);
-        setTimeout("smallSecOut(2)", 50);
-        setTimeout("smallSecOut(0)", 60);
-        setTimeout("smallSecOut(3)", 50);
-    }
+                const dragBehavior = d3.drag()
+                    .on('start', (event, d) => { if (!event.active && simulation) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y; })
+                    .on('drag', (event, d) => { d.fx = event.x;
+                        d.fy = event.y; })
+                    .on('end', (event, d) => { if (!event.active && simulation) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null; });
+                nodeSelections.call(dragBehavior);
+                nodeSelections.on('click', (event, d) => { event.stopPropagation();
+                    showNodePopup(d); });
+                svg.on('click', () => { hideNodePopup(); });
 
-    function smallSecStart(num) {
-        oSmallSec[num].style.opacity = "1";
-        oSmallSec[num].style.top = "0";
-    }
+                edgeSelectionsGlobal = edgeSelections;
+                labelSelectionsGlobal = labelSelections;
+                nodeSelectionsGlobal = nodeSelections;
+                nodeTextsGlobal = nodeTexts;
 
-    function smallSecOut(num) {
-        oSmallSec[num].style.opacity = "0";
-        oSmallSec[num].style.top = "100px";
-    }
+                if (simulation) {
+                    simulation.on('tick', () => {
+                        nodeSelections.select('circle').attr('cx', d => d.x).attr('cy', d => d.y);
+                        nodeTexts.attr('x', d => d.x).attr('y', d => d.y);
+                        edgeSelections.forEach(({ type, element, edge }) => {
+                            const sourceNode = nodes[edge.source],
+                                targetNode = nodes[edge.target];
+                            if (!sourceNode || !targetNode) return;
+                            if (type === 'line') {
+                                element.attr('x1', sourceNode.x).attr('y1', sourceNode.y).attr('x2',
+                                    targetNode.x).attr('y2', targetNode.y);
+                            } else if (type === 'bezier') {
+                                element.attr('d', computeBezierPath(sourceNode, targetNode, edge
+                                    .groupIndex, edge.groupSize));
+                            } else if (type === 'selfloop') {
+                                element.attr('d', computeSelfLoopPath(sourceNode).path);
+                            }
+                        });
+                        labelSelections.forEach(({ element, edge }) => {
+                            if (!element) return;
+                            const sourceNode = nodes[edge.source],
+                                targetNode = nodes[edge.target];
+                            if (!sourceNode || !targetNode) return;
+                            if (edge.isSelfLoop) {
+                                const pos = computeSelfLoopPath(sourceNode).labelPos;
+                                element.attr('x', pos.x).attr('y', pos.y);
+                            } else if (edge.groupSize > 1) {
+                                const sx = sourceNode.x,
+                                    sy = sourceNode.y,
+                                    tx = targetNode.x,
+                                    ty = targetNode.y;
+                                const mx = (sx + tx) / 2,
+                                    my = (sy + ty) / 2;
+                                const dx = tx - sx,
+                                    dy = ty - sy,
+                                    len = Math.sqrt(dx * dx + dy * dy) || 1;
+                                const nx = -dy / len,
+                                    ny = dx / len;
+                                const offset = (edge.groupIndex - (edge.groupSize - 1) / 2) *
+                                    BEZIER_OFFSET_STEP;
+                                const cx = mx + nx * offset,
+                                    cy = my + ny * offset;
+                                const midPoint = { x: 0.25 * sx + 0.5 * cx + 0.25 * tx, y: 0.25 * sy +
+                                        0.5 * cy + 0.25 * ty };
+                                element.attr('x', midPoint.x + nx * 2).attr('y', midPoint.y + ny * 2);
+                            } else {
+                                element.attr('x', (sourceNode.x + targetNode.x) / 2).attr('y', (sourceNode
+                                    .y + targetNode.y) / 2 - 4);
+                            }
+                        });
+                    });
+                }
+                setupZoom();
+                applyHighlightToSvg();
+            }
 
-    function changeInfo() {
-        animalIndexOut();
-        setTimeout("oLoad0.style.display = \"block\";", 100);
-        oNav[0].id = "none";
-        oNav[3].id = "focusA";
-    }
+            function showNodePopup(node) {
+                activeNodeId = node.id;
+                const isDirected = getCurrentGraphMode() === 'directed';
+                let inDegree = 0,
+                    outDegree = 0,
+                    degree = 0;
+                const connectedEdges = [];
+                classifiedEdgesData.forEach(edge => {
+                    if (edge.source === node.id || edge.target === node.id) {
+                        connectedEdges.push({ source: edge.source, target: edge.target, weight: edge.weight,
+                            isOutgoing: edge.source === node.id });
+                        if (isDirected) {
+                            if (edge.source === node.id) outDegree++;
+                            if (edge.target === node.id) inDegree++;
+                        } else {
+                            degree++;
+                        }
+                    }
+                });
+                const displayId = zeroBasedCheckbox.checked ? node.id : node.id + 1;
+                popupTitle.textContent = `节点详情 Node ${displayId}`;
+                if (isDirected) {
+                    popupStats.textContent = `入度 In: ${inDegree} | 出度 Out: ${outDegree}`;
+                } else {
+                    popupStats.textContent = `度 Degree: ${degree}`;
+                }
+                popupEdgeList.innerHTML = '';
+                connectedEdges.forEach(edge => {
+                    const u = zeroBasedCheckbox.checked ? edge.source : edge.source + 1;
+                    const v = zeroBasedCheckbox.checked ? edge.target : edge.target + 1;
+                    const div = document.createElement('div');
+                    div.textContent = `${u} → ${v} 权值 w: ${edge.weight}`;
+                    popupEdgeList.appendChild(div);
+                });
+                nodePopup.classList.add('active');
+                updatePopupResultText();
+            }
 
-    function changeIndex() {
-        animalIndexStart();
-        oLoad0.style.display = "none";
-        oNav[3].id = "none";
-        oNav[0].id = "focusA";
-    }
+            function hideNodePopup() {
+                activeNodeId = null;
+                nodePopup.classList.remove('active');
+            }
 
-    function accountSetting() {
-        window.open("official/login.html", "_self");
-    }
+            function updatePopupResultText() {
+                if (!lastAlgorithmResult) {
+                    popupResult.textContent = '';
+                    distanceList.innerHTML = '';
+                    return;
+                }
+                const { type, data } = lastAlgorithmResult;
+                if (type === 'mst') {
+                    if (data.edgeCount === 0) {
+                        popupResult.textContent = '图中没有可用的边';
+                    } else if (!data.isConnected) {
+                        popupResult.textContent =
+                            `图不连通，仅生成森林 | 总权重: ${data.totalWeight.toFixed(2)} | ${data.edgeCount}条边`;
+                    } else {
+                        popupResult.textContent = `MST总权重: ${data.totalWeight.toFixed(2)} | ${data.edgeCount}条边`;
+                    }
+                    distanceList.innerHTML = '';
+                } else if (type === 'dijkstra') {
+                    popupResult.textContent =
+                        `最短路计算完成 | 源节点: ${data.sourceDisplay} | ${data.reachableCount}/${data.totalNodes} 可达`;
+                    distanceList.innerHTML = '';
+                    if (data.distances && data.distances.length > 0) {
+                        data.distances.forEach(item => {
+                            const div = document.createElement('div');
+                            div.textContent =
+                                `节点 ${item.label}: ${item.distance === Infinity ? '∞' : item.distance.toFixed(2)}`;
+                            distanceList.appendChild(div);
+                        });
+                    }
+                }
+            }
 
-    function notIndex() {
-        alert("即将上线丨敬请期待");
-    }
-</script>
+            function setupZoom() {
+                if (zoomBehavior) svg.on('.zoom', null);
+                zoomBehavior = d3.zoom()
+                    .scaleExtent([0.1, 10])
+                    .filter(event => !event.button && !event.dblclick)
+                    .on('zoom', (event) => {
+                        currentZoomTransform = event.transform;
+                        if (gContainer) gContainer.attr('transform', event.transform);
+                        zoomSlider.value = event.transform.k;
+                        zoomDisplay.textContent = event.transform.k.toFixed(2);
+                    });
+                svg.call(zoomBehavior);
+                svg.call(zoomBehavior.transform, currentZoomTransform);
+                svg.on('dblclick.zoom', null);
+            }
+
+            function setZoomLevel(scale) {
+                if (!zoomBehavior || !svg) return;
+                const t = d3.zoomTransform(svg.node());
+                svg.call(zoomBehavior.transform, d3.zoomIdentity.translate(t.x, t.y).scale(scale));
+            }
+
+            function getCurrentGraphMode() {
+                for (const radio of graphModeRadios) {
+                    if (radio.checked) return radio.value;
+                }
+                return 'undirected';
+            }
+
+            // ==================== 并查集 ====================
+            class UnionFind {
+                constructor(n) { this.parent = Array.from({ length: n }, (_, i) => i);
+                    this.rank = Array(n).fill(0); }
+                find(x) { if (this.parent[x] !== x) this.parent[x] = this.find(this.parent[x]); return this.parent[
+                    x]; }
+                union(x, y) { let rx = this.find(x),
+                        ry = this.find(y); if (rx === ry) return false; if (this.rank[rx] < this.rank[ry])
+                    [rx, ry] = [ry, rx];
+                    this.parent[ry] = rx; if (this.rank[rx] === this.rank[ry]) this.rank[rx]++; return true; }
+            }
+
+            // ==================== 算法函数 ====================
+            function computeMSTFromInput() {
+                const parsed = parseInputData(dataInput.value);
+                if (parsed.errors.length > 0) { showError(parsed.errors.join('；')); return null; }
+                const N = parsed.N;
+                const edges = parsed.edges;
+                if (N === 0) { showError('无节点数据'); return null; }
+                if (edges.length === 0) { showError('图中没有可用的边'); return null; }
+
+                const uf = new UnionFind(N);
+                const mstEdgeIndices = [];
+                let totalWeight = 0;
+
+                const validEdges = edges
+                    .map((edge, idx) => ({ ...edge, idx }))
+                    .filter(e => e.source !== e.target && e.source >= 0 && e.source < N && e.target >= 0 && e.target <
+                        N);
+
+                if (validEdges.length === 0) { showError('图中没有可用的边'); return null; }
+
+                validEdges.sort((a, b) => a.weight - b.weight);
+
+                for (const edge of validEdges) {
+                    if (uf.union(edge.source, edge.target)) {
+                        mstEdgeIndices.push(edge.idx);
+                        totalWeight += edge.weight;
+                    }
+                }
+
+                const components = new Set();
+                for (let i = 0; i < N; i++) components.add(uf.find(i));
+                const isConnected = components.size === 1;
+
+                const mstNodeIndices = new Set();
+                mstEdgeIndices.forEach(ei => {
+                    mstNodeIndices.add(edges[ei].source);
+                    mstNodeIndices.add(edges[ei].target);
+                });
+
+                return {
+                    edgeIndices: mstEdgeIndices,
+                    nodeIndices: mstNodeIndices,
+                    totalWeight,
+                    isConnected,
+                    edgeCount: mstEdgeIndices.length,
+                    parsed
+                };
+            }
+
+            function computeDijkstraFromInput(sourceNodeId) {
+                const parsed = parseInputData(dataInput.value);
+                if (parsed.errors.length > 0) { showError(parsed.errors.join('；')); return null; }
+                const N = parsed.N;
+                const edges = parsed.edges;
+                if (N === 0) { showError('无节点数据'); return null; }
+                if (sourceNodeId === null || sourceNodeId === undefined || sourceNodeId < 0 || sourceNodeId >= N) {
+                    showError('源节点无效，请重新选择节点');
+                    return null;
+                }
+                if (edges.length === 0) { showError('图中没有边'); return null; }
+
+                const dist = Array(N).fill(Infinity);
+                const prevNode = Array(N).fill(null);
+                const prevEdge = Array(N).fill(null);
+                const visited = Array(N).fill(false);
+                dist[sourceNodeId] = 0;
+
+                const isDirected = getCurrentGraphMode() === 'directed';
+                const adj = Array.from({ length: N }, () => []);
+
+                edges.forEach((edge, idx) => {
+                    if (edge.source >= 0 && edge.source < N && edge.target >= 0 && edge.target < N) {
+                        adj[edge.source].push({ to: edge.target, weight: edge.weight, idx });
+                        if (!isDirected && edge.source !== edge.target) {
+                            adj[edge.target].push({ to: edge.source, weight: edge.weight, idx });
+                        }
+                    }
+                });
+
+                for (let iter = 0; iter < N; iter++) {
+                    let u = -1,
+                        minDist = Infinity;
+                    for (let i = 0; i < N; i++) {
+                        if (!visited[i] && dist[i] < minDist) {
+                            minDist = dist[i];
+                            u = i;
+                        }
+                    }
+                    if (u === -1) break;
+                    visited[u] = true;
+                    for (const { to, weight, idx } of adj[u]) {
+                        if (!visited[to] && dist[u] + weight < dist[to]) {
+                            dist[to] = dist[u] + weight;
+                            prevNode[to] = u;
+                            prevEdge[to] = idx;
+                        }
+                    }
+                }
+
+                const treeEdgeIndices = new Set();
+                const reachableNodeIndices = new Set();
+                reachableNodeIndices.add(sourceNodeId);
+                for (let v = 0; v < N; v++) {
+                    if (v !== sourceNodeId && prevNode[v] !== null && dist[v] !== Infinity) {
+                        treeEdgeIndices.add(prevEdge[v]);
+                        reachableNodeIndices.add(v);
+                        reachableNodeIndices.add(prevNode[v]);
+                    }
+                }
+
+                const sourceDisplay = zeroBasedCheckbox.checked ? sourceNodeId : sourceNodeId + 1;
+                const distances = [];
+                for (let i = 0; i < N; i++) {
+                    const label = zeroBasedCheckbox.checked ? i : i + 1;
+                    distances.push({ label: label, distance: dist[i] });
+                }
+
+                return {
+                    edgeIndices: treeEdgeIndices,
+                    nodeIndices: reachableNodeIndices,
+                    sourceNode: sourceNodeId,
+                    sourceDisplay,
+                    dist,
+                    prevNode,
+                    reachableCount: reachableNodeIndices.size,
+                    totalNodes: N,
+                    distances,
+                    parsed
+                };
+            }
+
+            // ==================== 高亮管理 ====================
+            function applyHighlightToSvg() {
+                if (!edgeSelectionsGlobal.length && !nodeSelectionsGlobal) return;
+                const { type, edgeIndices, nodeIndices, sourceNode } = highlightState;
+
+                edgeSelectionsGlobal.forEach(({ element }) => {
+                    element.classed('edge-highlight-mst', false)
+                        .classed('edge-highlight-dijkstra', false)
+                        .classed('edge-dimmed', false);
+                    element.attr('stroke', '#000').attr('stroke-width', EDGE_STROKE_WIDTH).attr('opacity', 1);
+                });
+                labelSelectionsGlobal.forEach(({ element }) => {
+                    if (!element) return;
+                    element.classed('label-highlight-mst', false)
+                        .classed('label-highlight-dijkstra', false)
+                        .classed('label-dimmed', false);
+                    element.attr('fill', '#000').attr('opacity', 1);
+                });
+                if (nodeSelectionsGlobal) {
+                    nodeSelectionsGlobal.select('circle')
+                        .classed('node-highlight-mst', false)
+                        .classed('node-highlight-dijkstra', false)
+                        .classed('node-highlight-source', false)
+                        .classed('node-dimmed', false)
+                        .attr('stroke', '#000').attr('stroke-width', 2).attr('opacity', 1).attr('fill', '#fff');
+                    nodeSelectionsGlobal.select('text')
+                        .classed('node-dimmed', false).attr('fill', '#000').attr('opacity', 1);
+                }
+
+                if (type === null || edgeIndices.size === 0) return;
+
+                const highlightClass = type === 'mst' ? 'edge-highlight-mst' : 'edge-highlight-dijkstra';
+                const labelClass = type === 'mst' ? 'label-highlight-mst' : 'label-highlight-dijkstra';
+                const nodeClass = type === 'mst' ? 'node-highlight-mst' : 'node-highlight-dijkstra';
+
+                edgeSelectionsGlobal.forEach(({ element, idx }) => {
+                    if (edgeIndices.has(idx)) {
+                        element.classed(highlightClass, true).classed('edge-dimmed', false);
+                        element.attr('stroke', type === 'mst' ? '#d32f2f' : '#1976d2').attr('stroke-width', 3)
+                            .attr('opacity', 1);
+                    } else {
+                        element.classed('edge-dimmed', true);
+                        element.attr('stroke', '#b0b0b0').attr('stroke-width', 1).attr('opacity', 0.5);
+                    }
+                });
+
+                labelSelectionsGlobal.forEach(({ element, idx }) => {
+                    if (!element) return;
+                    if (edgeIndices.has(idx)) {
+                        element.classed(labelClass, true).classed('label-dimmed', false);
+                        element.attr('fill', type === 'mst' ? '#d32f2f' : '#1976d2').attr('opacity', 1);
+                    } else {
+                        element.classed('label-dimmed', true);
+                        element.attr('fill', '#b0b0b0').attr('opacity', 0.5);
+                    }
+                });
+
+                if (nodeSelectionsGlobal) {
+                    nodeSelectionsGlobal.select('circle').each(function(d) {
+                        const circle = d3.select(this);
+                        if (nodeIndices && nodeIndices.has(d.id)) {
+                            circle.classed(nodeClass, true).classed('node-dimmed', false);
+                            circle.attr('stroke', type === 'mst' ? '#d32f2f' : '#1976d2').attr(
+                                'stroke-width', 3).attr('opacity', 1);
+                            if (type === 'dijkstra' && sourceNode !== null && d.id === sourceNode) {
+                                circle.classed('node-highlight-source', true).attr('fill', '#e3f2fd');
+                            } else {
+                                circle.classed('node-highlight-source', false).attr('fill', '#fff');
+                            }
+                        } else {
+                            circle.classed('node-dimmed', true).attr('stroke', '#b0b0b0').attr('stroke-width',
+                                1.5).attr('opacity', 0.5).classed('node-highlight-source', false);
+                        }
+                    });
+                    nodeSelectionsGlobal.select('text').each(function(d) {
+                        const text = d3.select(this);
+                        if (nodeIndices && nodeIndices.has(d.id)) {
+                            text.classed('node-dimmed', false).attr('fill', '#000').attr('opacity', 1);
+                        } else {
+                            text.classed('node-dimmed', true).attr('fill', '#b0b0b0').attr('opacity', 0.5);
+                        }
+                    });
+                }
+            }
+
+            function clearHighlight() {
+                highlightState = { type: null, edgeIndices: new Set(), nodeIndices: new Set(), sourceNode: null };
+                lastAlgorithmResult = null;
+                updatePopupResultText();
+                applyHighlightToSvg();
+            }
+
+            function setHighlight(type, edgeIndices, nodeIndices, sourceNode, algorithmResult) {
+                highlightState = {
+                    type,
+                    edgeIndices: new Set(edgeIndices),
+                    nodeIndices: new Set(nodeIndices),
+                    sourceNode: sourceNode !== undefined ? sourceNode : null,
+                };
+                lastAlgorithmResult = algorithmResult;
+                updatePopupResultText();
+                applyHighlightToSvg();
+            }
+
+            // ==================== 核心渲染函数（提取复用） ====================
+            function performRender() {
+                const parsed = parseInputData(dataInput.value);
+                if (parsed.nodes.length === 0 && parsed.edges.length === 0) {
+                    svg.selectAll('*').remove();
+                    if (simulation) { simulation.stop();
+                        simulation = null; }
+                    edgeSelectionsGlobal = [];
+                    labelSelectionsGlobal = [];
+                    nodeSelectionsGlobal = null;
+                    nodeTextsGlobal = null;
+                    highlightState = { type: null, edgeIndices: new Set(), nodeIndices: new Set(), sourceNode: null };
+                    lastAlgorithmResult = null;
+                    updatePopupResultText();
+                    hideNodePopup();
+                    showError(parsed.errors.join('；') || '请输入数据');
+                    return;
+                }
+                renderGraph(parsed);
+                clearError();
+                // 渲染后自动显示节点详情：优先保持当前选中节点，否则默认节点1
+                if (nodesData.length > 0) {
+                    let targetNode = null;
+                    if (activeNodeId !== null && nodesData.some(n => n.id === activeNodeId)) {
+                        targetNode = nodesData.find(n => n.id === activeNodeId);
+                    } else {
+                        targetNode = nodesData[0]; // 默认节点1（id=0）
+                    }
+                    if (targetNode) showNodePopup(targetNode);
+                    else hideNodePopup();
+                } else {
+                    hideNodePopup();
+                }
+            }
+
+            // ==================== 按钮事件 ====================
+            mstBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                const parsed = parseInputData(dataInput.value);
+                if (parsed.errors.length > 0) { showError(parsed.errors.join('；')); return; }
+                if (parsed.nodes.length === 0 || parsed.edges.length === 0) { showError('数据无效，请检查输入'); return; }
+                if (!gContainer || nodesData.length !== parsed.nodes.length) {
+                    renderGraph(parsed);
+                } else {
+                    renderGraph(parsed);
+                }
+                const result = computeMSTFromInput();
+                if (result) {
+                    setHighlight('mst', result.edgeIndices, result.nodeIndices, null, {
+                        type: 'mst',
+                        data: { totalWeight: result.totalWeight, edgeCount: result.edgeCount, isConnected: result
+                                .isConnected }
+                    });
+                    clearError();
+                    // 高亮后保持或恢复节点详情显示
+                    if (nodesData.length > 0) {
+                        let targetNode = (activeNodeId !== null && nodesData.some(n => n.id === activeNodeId)) ?
+                            nodesData.find(n => n.id === activeNodeId) : nodesData[0];
+                        if (targetNode) showNodePopup(targetNode);
+                    }
+                }
+            });
+
+            dijkstraBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (activeNodeId === null) { showError('请先选择一个节点'); return; }
+                const parsed = parseInputData(dataInput.value);
+                if (parsed.errors.length > 0) { showError(parsed.errors.join('；')); return; }
+                if (parsed.nodes.length === 0 || parsed.edges.length === 0) { showError('数据无效，请检查输入'); return; }
+                if (!gContainer || nodesData.length !== parsed.nodes.length) {
+                    renderGraph(parsed);
+                } else {
+                    renderGraph(parsed);
+                }
+                const result = computeDijkstraFromInput(activeNodeId);
+                if (result) {
+                    setHighlight('dijkstra', result.edgeIndices, result.nodeIndices, result.sourceNode, {
+                        type: 'dijkstra',
+                        data: { sourceDisplay: result.sourceDisplay, reachableCount: result.reachableCount,
+                            totalNodes: result.totalNodes, distances: result.distances }
+                    });
+                    clearError();
+                    if (nodesData.length > 0) {
+                        const currentNode = nodesData.find(n => n.id === activeNodeId);
+                        if (currentNode) showNodePopup(currentNode);
+                    }
+                }
+            });
+
+            clearHighlightBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                clearHighlight();
+                clearError();
+                // 清除后如果节点详情面板仍然打开，保持显示但更新结果区域
+                if (activeNodeId !== null && nodesData.some(n => n.id === activeNodeId)) {
+                    const node = nodesData.find(n => n.id === activeNodeId);
+                    if (node) showNodePopup(node);
+                }
+            });
+
+            renderBtn.addEventListener('click', () => {
+                performRender();
+            });
+
+            // ==================== Enter键自动更新 ====================
+            dataInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' && !event.shiftKey && !event.ctrlKey && !event.metaKey) {
+                    // 使用 setTimeout 确保 textarea 的值已更新（包括新插入的换行符）
+                    setTimeout(() => {
+                        performRender();
+                    }, 0);
+                }
+            });
+
+            zeroBasedCheckbox.addEventListener('change', () => {
+                const nodeTexts = svg.selectAll('.node-text');
+                if (nodeTexts.size() > 0) nodeTexts.text(d => zeroBasedCheckbox.checked ? String(d.id) : String(d
+                .id + 1));
+                if (activeNodeId !== null) {
+                    const node = nodesData.find(n => n.id === activeNodeId);
+                    if (node) showNodePopup(node);
+                }
+            });
+
+            zoomSlider.addEventListener('input', () => {
+                const scale = parseFloat(zoomSlider.value);
+                zoomDisplay.textContent = scale.toFixed(2);
+                setZoomLevel(scale);
+            });
+
+            // ==================== 导出核心函数 ====================
+            function getSvgWithStyles() {
+                const svgNode = svg.node();
+                const clone = svgNode.cloneNode(true);
+                clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+                const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+                styleElement.setAttribute('type', 'text/css');
+                const cssRules = [];
+                for (const sheet of document.styleSheets) {
+                    try {
+                        const rules = sheet.cssRules || sheet.rules;
+                        if (rules) {
+                            for (const rule of rules) {
+                                cssRules.push(rule.cssText);
+                            }
+                        }
+                    } catch (e) {}
+                }
+                styleElement.textContent = cssRules.join('\n');
+                if (clone.firstChild) {
+                    clone.insertBefore(styleElement, clone.firstChild);
+                } else {
+                    clone.appendChild(styleElement);
+                }
+                const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bgRect.setAttribute('x', '0');
+                bgRect.setAttribute('y', '0');
+                bgRect.setAttribute('width', String(svgWidth));
+                bgRect.setAttribute('height', String(svgHeight));
+                bgRect.setAttribute('fill', '#ffffff');
+                bgRect.setAttribute('stroke', 'none');
+                if (clone.firstChild) {
+                    clone.insertBefore(bgRect, clone.firstChild);
+                } else {
+                    clone.appendChild(bgRect);
+                }
+                return clone;
+            }
+
+            function serializeSvgWithStyles() {
+                const clone = getSvgWithStyles();
+                const serializer = new XMLSerializer();
+                return serializer.serializeToString(clone);
+            }
+
+            function svgToImageBlob() {
+                return new Promise((resolve, reject) => {
+                    const svgStr = serializeSvgWithStyles();
+                    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const img = new Image();
+                    img.onload = () => {
+                        URL.revokeObjectURL(url);
+                        const scale = 2;
+                        const canvas = document.createElement('canvas');
+                        canvas.width = svgWidth * scale;
+                        canvas.height = svgHeight * scale;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        canvas.toBlob((pngBlob) => {
+                            if (pngBlob) resolve(pngBlob);
+                            else reject(new Error('Canvas toBlob 失败'));
+                        }, 'image/png');
+                    };
+                    img.onerror = (err) => { URL.revokeObjectURL(url);
+                        reject(new Error('SVG 加载失败')); };
+                    img.src = url;
+                });
+            }
+
+            function downloadBlob(blob, filename) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // ==================== SVG 导出 ====================
+            exportSvgBtn.addEventListener('click', () => {
+                try {
+                    const svgStr = serializeSvgWithStyles();
+                    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+                    downloadBlob(blob, 'graph.svg');
+                    clearError();
+                } catch (e) { showError('SVG导出失败: ' + e.message); }
+            });
+
+            // ==================== PNG 导出 ====================
+            exportPngBtn.addEventListener('click', async () => {
+                try {
+                    const pngBlob = await svgToImageBlob();
+                    downloadBlob(pngBlob, 'graph.png');
+                    clearError();
+                } catch (e) { showError('PNG导出失败: ' + e.message); }
+            });
+
+            // ==================== Markdown 导出（包含Mermaid图） ====================
+            exportMdBtn.addEventListener('click', () => {
+                try {
+                    const parsed = parseInputData(dataInput.value);
+                    if (parsed.errors.length > 0) { showError(parsed.errors.join('；')); return; }
+                    const isDirected = getCurrentGraphMode() === 'directed';
+                    const startBase = zeroBasedCheckbox.checked ? 0 : 1;
+                    const N = parsed.N;
+                    const edges = parsed.edges;
+
+                    let md = '# 图论可视化数据 Graph Visualization Data\n\n';
+                    md += `- **顶点数 Vertices**: ${N}\n`;
+                    md += `- **边数 Edges**: ${edges.length}\n`;
+                    md += `- **图模式 Mode**: ${isDirected ? '有向图 Directed' : '无向图 Undirected'}\n`;
+                    md +=
+                        `- **节点编号 Node Indexing**: ${startBase === 0 ? '从0开始 0-based' : '从1开始 1-based'}\n`;
+                    md += `- **导出时间 Exported**: ${new Date().toLocaleString()}\n\n`;
+
+                    md += '## 图结构 Graph Structure (Mermaid)\n\n';
+                    md += '```mermaid\n';
+                    md += isDirected ? 'graph LR\n' : 'graph LR\n';
+                    edges.forEach((edge) => {
+                        const u = startBase === 0 ? edge.source : edge.source + 1;
+                        const v = startBase === 0 ? edge.target : edge.target + 1;
+                        const weightStr = edge.weight !== 1.0 || edge._explicitWeight ?
+                            `|${edge.weight}|` : '';
+                        if (isDirected) {
+                            md += `    ${u} -->${weightStr} ${v}\n`;
+                        } else {
+                            md += `    ${u} ---${weightStr} ${v}\n`;
+                        }
+                    });
+                    md += '```\n\n';
+
+                    md += '## 边列表 Edge List\n\n';
+                    md += '| # | 起点 From | 终点 To | 权重 Weight |\n';
+                    md += '|---|----------|---------|-------------|\n';
+                    edges.forEach((edge, idx) => {
+                        const u = startBase === 0 ? edge.source : edge.source + 1;
+                        const v = startBase === 0 ? edge.target : edge.target + 1;
+                        md += `| ${idx + 1} | ${u} | ${v} | ${edge.weight} |\n`;
+                    });
+                    md += '\n';
+
+                    if (lastAlgorithmResult) {
+                        if (lastAlgorithmResult.type === 'mst') {
+                            const data = lastAlgorithmResult.data;
+                            md += '## 算法结果 Algorithm Result: 最小生成树 MST\n\n';
+                            md += `- **总权重 Total Weight**: ${data.totalWeight.toFixed(2)}\n`;
+                            md += `- **边数 Edge Count**: ${data.edgeCount}\n`;
+                            md +=
+                                `- **连通性 Connected**: ${data.isConnected ? '是 Yes' : '否 No（森林 Forest）'}\n\n`;
+                            md += '### MST 边列表 MST Edges\n\n';
+                            md += '| # | 起点 From | 终点 To | 权重 Weight |\n';
+                            md += '|---|----------|---------|-------------|\n';
+                            const mstIdx = highlightState.edgeIndices;
+                            let mstCount = 0;
+                            mstIdx.forEach(idx => {
+                                const edge = edges[idx];
+                                if (!edge) return;
+                                mstCount++;
+                                const u = startBase === 0 ? edge.source : edge.source + 1;
+                                const v = startBase === 0 ? edge.target : edge.target + 1;
+                                md += `| ${mstCount} | ${u} | ${v} | ${edge.weight} |\n`;
+                            });
+                            md += '\n';
+                        } else if (lastAlgorithmResult.type === 'dijkstra') {
+                            const data = lastAlgorithmResult.data;
+                            md += '## 算法结果 Algorithm Result: 单源最短路 Dijkstra\n\n';
+                            md += `- **源节点 Source**: ${data.sourceDisplay}\n`;
+                            md += `- **可达节点 Reachable**: ${data.reachableCount}/${data.totalNodes}\n\n`;
+                            md += '### 最短距离 Shortest Distances\n\n';
+                            md += '| 节点 Node | 距离 Distance |\n';
+                            md += '|----------|---------------|\n';
+                            data.distances.forEach(item => {
+                                md +=
+                                    `| ${item.label} | ${item.distance === Infinity ? '∞' : item.distance.toFixed(2)} |\n`;
+                            });
+                            md += '\n';
+                        }
+                    }
+
+                    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+                    downloadBlob(blob, 'graph.md');
+                    clearError();
+                } catch (e) { showError('Markdown导出失败: ' + e.message); }
+            });
+
+            // ==================== 初始化 ====================
+            const initialParsed = parseInputData(dataInput.value);
+            renderGraph(initialParsed);
+            clearError();
+            // 默认显示节点1的详情
+            if (nodesData.length > 0) {
+                showNodePopup(nodesData[0]);
+            }
+            copyrightText.textContent = '© 2026 Graph Tool | idelzz | MST & Dijkstra';
+
+            window.debugInfo = function() {
+                console.log('nodesData:', nodesData);
+                console.log('edgesData:', edgesData);
+                console.log('classifiedEdgesData:', classifiedEdgesData);
+                console.log('activeNodeId:', activeNodeId);
+                console.log('lastAlgorithmResult:', lastAlgorithmResult);
+            };
+            console.log('图论可视化工具已加载 Graph Visualization Tool loaded. 支持 MST & Dijkstra 算法。按Enter自动更新图。');
+        })();
+    </script>
 </body>
 </html>

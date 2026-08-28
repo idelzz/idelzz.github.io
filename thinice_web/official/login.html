@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+          name="viewport">
+    <meta content="ie=edge" http-equiv="X-UA-Compatible">
+    <link href="../css/thinice.css" rel="stylesheet" type="text/css">
+    <title>登录-iCE Web</title>
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            background-color: white;
+            height: 98%;
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+
+        body .card {
+            margin: 0 50px 0 50px;
+        }
+
+        body .card:first-child {
+            height: 400px;
+            width: 711px;
+            color:white;
+            font-family:微软雅黑;
+            font-weight: bold;
+            background-image: url("../img/icepass.png");
+            background-size: 110%;
+            background-position: top right;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            transition: all 0.5s cubic-bezier(0, 1, 0, 1) 0s;
+            width: 350px;
+            /*动画预备*/
+            position: relative;
+            top: 200px;
+        }
+
+        form input {
+            margin: 15px 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="card pcElement">
+</div>
+<a class="peElement" href="../"><img width="150px" style="position:absolute;top:0;left:0;" src="../img/iceLogo.png"></a>
+<form action="../php/login.php" method="post">
+    <h3>欢迎回来</h3>
+    <input name="id" placeholder="账号" type="text">
+    <input name="pwd" placeholder="密码" type="password">
+    <input class="bg-button-blue" type="submit" value="登录">
+    <h3>还没有账号？</h3>
+    <div style="display:flex;">
+        <input class="bg-button-blue"
+               onclick="window.open('register.html','_self')"
+               style="flex-grow:1;"
+               type="button"
+               value="前往注册">
+        <input class="bg-button-blue"
+               onclick="window.open('../','_self')"
+               style="margin-left: 1em;flex-grow:1;"
+               type="button"
+               value="回到首页">
+    </div>
+</form>
+<script>
+    //form入场动画
+    //alert("因为没钱租服务器，所以网页无条件运行登录和注册功能，该页面仅供展示，请期待我以后买服务器");
+    let oForm = document.getElementsByTagName("form")[0];
+    setTimeout("oForm.style.top = \"0\"", 100);
+    /////form入场动画
+</script>
+</body>
+</html>
