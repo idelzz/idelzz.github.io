@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obsidian Markdown → A4 PDF</title>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --border: #e3e5e9;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --accent: #4f46e5;
+    --accent-h: #4338ca;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 340px;
+    flex: none;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
+  .sidebar h1 {
+    font-size: 17px;
+    margin: 0;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar h1 .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px rgba(79,70,229,.15);
+  }
+  .sub { color: var(--muted); font-size: 12px; margin: -10px 0 0; }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: .16s;
+    user-select: none;
+  }
+  .btn:hover { background: #f7f8fa; border-color: #cfd3da; }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn.primary:hover { background: var(--accent-h); border-color: var(--accent-h); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  input[type=file] { display: none; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .field label { font-size: 13px; color: #374151; font-weight: 500; }
+  select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #fff;
+    font-size: 13px;
+    color: var(--text);
+    outline: none;
+  }
+  select:focus { border-color: var(--accent); }
+
+  .check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 13px;
+    color: #374151;
+    padding: 5px 0;
+    cursor: pointer;
+    line-height: 1.5;
+  }
+  .check input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; margin-top: 2px; flex: none; }
+
+  .stats {
+    display: flex;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .stats span {
+    background: #f2f3f6;
+    border-radius: 6px;
+    padding: 3px 9px;
+  }
+
+  .file-list {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #fbfbfc;
+  }
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    border-bottom: 1px solid #f0f1f4;
+    cursor: pointer;
+  }
+  .file-row:last-child { border-bottom: none; }
+  .file-row:hover { background: #f5f6f9; }
+  .file-row input { accent-color: var(--accent); flex: none; }
+  .file-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #333;
+  }
+  .file-size { color: #9aa1ac; flex: none; font-size: 11px; }
+  .empty-tip {
+    padding: 24px 12px;
+    text-align: center;
+    color: #9aa1ac;
+    font-size: 12.5px;
+  }
+
+  .progress-wrap {
+    height: 6px;
+    background: #eceef2;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    border-radius: 3px;
+    transition: width .25s ease;
+  }
+  .status {
+    font-size: 12.5px;
+    color: var(--muted);
+    min-height: 20px;
+    word-break: break-all;
+  }
+  .footer-note {
+    margin-top: auto;
+    font-size: 11.5px;
+    color: #9aa1ac;
+    line-height: 1.7;
+    border-top: 1px dashed var(--border);
+    padding-top: 12px;
+  }
+
+  .main {
+    flex: 1;
+    padding: 28px 32px;
+    overflow: auto;
+    min-width: 0;
+  }
+  .main h2 { font-size: 15px; margin: 0 0 14px; font-weight: 600; }
+  .welcome {
+    max-width: 560px;
+    color: #5a6270;
+    font-size: 13.5px;
+    line-height: 1.9;
+  }
+  .welcome ul { padding-left: 20px; margin: 10px 0; }
+  .welcome code {
+    background: #eef0f4;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 12.5px;
+  }
+
+  #stage {
+    position: absolute;
+    left: -30000px;
+    top: 0;
+    z-index: -1;
+  }
+
+  .page {
+    position: relative;
+    background: #ffffff;
+    overflow: hidden;
+    color: #1a1a1a;
+  }
+  .page-inner {
+    position: absolute;
+    overflow: hidden;
+  }
+  .page-footer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 7.5mm;
+    text-align: center;
+    font-size: 11px;
+    color: #9a9a9a;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    letter-spacing: .5px;
+  }
+
+  .md-body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.78;
+    color: #1a1a1a;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .md-body > *:first-child { margin-top: 0 !important; }
+  .md-body h1, .md-body h2, .md-body h3,
+  .md-body h4, .md-body h5, .md-body h6 {
+    font-weight: 700;
+    line-height: 1.35;
+    color: #111;
+    page-break-after: avoid;
+  }
+  .md-body h1 { font-size: 24px; margin: 26px 0 14px; padding-bottom: 6px; border-bottom: 1.5px solid #ececec; }
+  .md-body h2 { font-size: 20px; margin: 24px 0 12px; padding-bottom: 4px; border-bottom: 1px solid #f0f0f0; }
+  .md-body h3 { font-size: 17px; margin: 20px 0 10px; }
+  .md-body h4 { font-size: 15px; margin: 18px 0 8px; }
+  .md-body h5 { font-size: 14px; margin: 16px 0 8px; }
+  .md-body h6 { font-size: 13px; margin: 16px 0 8px; color: #555; }
+  .md-body p { margin: 0 0 12px; }
+  .md-body ul, .md-body ol { margin: 0 0 12px; padding-left: 1.7em; }
+  .md-body li { margin: 4px 0; }
+  .md-body li > ul, .md-body li > ol { margin: 4px 0; }
+  .md-body blockquote {
+    margin: 0 0 12px;
+    padding: 8px 16px;
+    border-left: 3px solid #d5d8de;
+    background: #fafbfc;
+    color: #4a5058;
+    border-radius: 0 6px 6px 0;
+  }
+  .md-body blockquote p:last-child { margin-bottom: 0; }
+  .md-body pre {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    background: #f6f8fa;
+    border: 1px solid #eaecef;
+    border-radius: 7px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .md-body pre.pre-cont-top {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: none;
+    margin-top: 0;
+  }
+  .md-body pre.pre-cont-bottom {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    margin-bottom: 0;
+  }
+  .md-body code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: .9em;
+    background: #f1f2f4;
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #b3306b;
+  }
+  .md-body pre code,
+  .md-body pre code.hljs {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+    font-size: 12px;
+    display: block;
+    overflow: visible;
+  }
+  .md-body pre code .cline {
+    display: block;
+    min-height: 1.6em;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .md-body table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0 0 14px;
+    font-size: 13px;
+    table-layout: fixed;
+  }
+  .md-body th, .md-body td {
+    border: 1px solid #dfe2e7;
+    padding: 6px 10px;
+    text-align: left;
+    word-break: break-word;
+  }
+  .md-body th { background: #f6f8fa; font-weight: 600; }
+  .md-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 10px auto;
+    border-radius: 4px;
+  }
+  .md-body hr {
+    border: none;
+    border-top: 1px solid #e6e8eb;
+    margin: 22px 0;
+  }
+  .md-body a { color: #0b5fff; text-decoration: none; }
+  .md-body mark { background: #fff2a8; padding: 0 2px; border-radius: 2px; }
+  .md-body .embed-missing {
+    display: inline-block;
+    color: #b0b6bf;
+    background: #f4f5f7;
+    border-radius: 4px;
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  .md-body .note-title {
+    font-size: 19px;
+    font-weight: 700;
+    color: #111;
+    margin: 0 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #ececec;
+  }
+  .md-body .note-divider {
+    border: none;
+    border-top: 1px dashed #dcdfe4;
+    margin: 30px 0;
+  }
+
+  .md-body .katex-display {
+    margin: 12px 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .md-body .katex { font-size: 1.05em; }
+
+  .toc-title {
+    font-size: 26px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 8px;
+    margin: 6px 0 34px;
+    color: #111;
+  }
+  .toc-row {
+    display: flex;
+    align-items: baseline;
+    margin-bottom: 9px;
+    line-height: 1.55;
+    color: #23262b;
+  }
+  .toc-dots {
+    flex: 1 1 auto;
+    border-bottom: 1px dotted #c9ced6;
+    margin: 0 7px 3px;
+    min-width: 16px;
+    transform: translateY(-2px);
+  }
+  .toc-page {
+    flex: none;
+    font-variant-numeric: tabular-nums;
+    color: #4a5058;
+  }
+  .toc-text { flex: 0 1 auto; }
+  .toc-lv-1 { font-size: 15px; font-weight: 600; margin-top: 14px; }
+  .toc-lv-2 { font-size: 13.5px; padding-left: 20px; }
+  .toc-lv-3 { font-size: 12.5px; padding-left: 40px; color: #454b54; }
+  .toc-lv-4 { font-size: 12px; padding-left: 58px; color: #5b626b; }
+
+  @media (max-width: 860px) {
+    .app { flex-direction: column; }
+    .sidebar { width: 100%; position: static; max-height: none; }
+    .main { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <h1><span class="dot"></span>Markdown → A4 PDF</h1>
+    <p class="sub">Obsidian 笔记批量导出 · 自动页码 · 目录 · LaTeX · 代码高亮</p>
+
+    <div>
+      <div class="section-title">1. 选择文件夹</div>
+      <label class="btn" for="folderInput">📁 选择 Obsidian 笔记文件夹</label>
+      <input type="file" id="folderInput" webkitdirectory directory multiple>
+    </div>
+
+    <div>
+      <div class="section-title">2. 导出设置</div>
+
+      <div class="field">
+        <label for="tocLevel">目录大纲等级（包含 1 ~ N 级标题）</label>
+        <select id="tocLevel">
+          <option value="1">1 级（仅一级标题）</option>
+          <option value="2">2 级</option>
+          <option value="3" selected>3 级（推荐）</option>
+          <option value="4">4 级</option>
+          <option value="5">5 级</option>
+          <option value="6">6 级（全部标题）</option>
+        </select>
+      </div>
+
+      <label class="check">
+        <input type="checkbox" id="tocEnabled" checked>
+        <span>在第 0 页生成目录</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="showFileName" checked>
+        <span>每篇笔记前显示文件名</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="pageBreakEach">
+        <span>每篇笔记另起一页</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="noSplitCode">
+        <span>代码块不拆分（非打印模式）<br>
+        <span style="font-size:11.5px;color:#9aa1ac;">超长代码块整块翻页，单页仍放不下时自动扩展该页高度，导出 PDF 页高随之变化。</span></span>
+      </label>
+    </div>
+
+    <div>
+      <div class="section-title">3. 笔记列表</div>
+      <div class="stats" style="margin-bottom:8px;">
+        <span id="statNotes">0 篇笔记</span>
+        <span id="statAssets">0 个附件</span>
+      </div>
+      <div class="file-list" id="fileList">
+        <div class="empty-tip">还没有选择文件夹</div>
+      </div>
+    </div>
+
+    <div>
+      <button class="btn primary" id="exportBtn" disabled>📄 生成并导出 PDF</button>
+      <div style="height:12px"></div>
+      <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+      <div style="height:8px"></div>
+      <div class="status" id="status">等待选择文件夹…</div>
+    </div>
+
+    <div class="footer-note">
+      提示：<br>
+      • 支持 <code>[[双链]]</code>、<code>![[图片嵌入]]</code>、<code>==高亮==</code>、Callout<br>
+      • 支持 <code>$公式$</code>、<code>$$块公式$$</code>（KaTeX 渲染）<br>
+      • 代码块支持 C++ / Python / JS 等语法高亮<br>
+      • 页码格式：第 X 页 / 共 Y 页
+    </div>
+  </aside>
+
+  <main class="main">
+    <h2>页面预览</h2>
+    <div id="previewArea">
+      <div class="welcome">
+        <p>这个工具会把 Obsidian 笔记库中的 Markdown 文件排版成标准 A4 文档并导出为 PDF。</p>
+        <ul>
+          <li>先在左侧选择你的 <b>Obsidian 库文件夹</b></li>
+          <li>支持 <code>[[双链]]</code>、<code>![[图片嵌入]]</code>、<code>==高亮==</code>、Callout、<b>LaTeX 公式</b>、<b>代码语法高亮</b></li>
+          <li>勾选「代码块不拆分」可启用非打印模式：代码块保持完整，超出页面时整块翻页并自动扩展页高</li>
+          <li>点击「生成并导出 PDF」，等待渲染完成即可</li>
+        </ul>
+        <p style="color:#9aa1ac;font-size:12.5px;">所有处理都在你的浏览器本地完成，文件不会上传到任何服务器。</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="stage"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/lib/marked.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/common.min.js"></script>
+
+<script>
+/* =========================================================
+   基础常量
+   ========================================================= */
+const PX_PER_MM = 96 / 25.4;
+const PAGE_W    = 210 * PX_PER_MM;
+const PAGE_H    = 297 * PX_PER_MM;
+const MARGIN_X  = 18  * PX_PER_MM;
+const MARGIN_Y  = 18  * PX_PER_MM;
+const CONTENT_W = PAGE_W - MARGIN_X * 2;
+const CONTENT_H = PAGE_H - MARGIN_Y * 2;
+
+const PH_OPEN  = '\uE000';
+const PH_CLOSE = '\uE001';
+const PH_RE    = new RegExp(PH_OPEN + 'MATH(\\d+)' + PH_CLOSE, 'g');
+
+const state = {
+  notes: [],
+  assets: new Map(),
+};
+const blobUrlCache = new Map();
+
+const $ = (id) => document.getElementById(id);
+const tick = (ms = 20) => new Promise(r => setTimeout(r, ms));
+
+/* =========================================================
+   工具函数
+   ========================================================= */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+}
+
+function fmtSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function normalizePath(p) {
+  const parts = [];
+  for (const seg of String(p).replace(/\\/g, '/').split('/')) {
+    if (!seg || seg === '.') continue;
+    if (seg === '..') parts.pop();
+    else parts.push(seg);
+  }
+  return parts.join('/');
+}
+
+function getAssetUrl(key, file) {
+  if (!blobUrlCache.has(key)) {
+    blobUrlCache.set(key, URL.createObjectURL(file));
+  }
+  return blobUrlCache.get(key);
+}
+
+function resolveAsset(target, notePath, assets) {
+  if (!target) return null;
+  if (/^(https?:|data:|blob:|\/\/)/i.test(target)) return target;
+
+  const clean = String(target).replace(/^\.\//, '').replace(/\\/g, '/');
+  const noteDir = notePath.includes('/')
+    ? notePath.slice(0, notePath.lastIndexOf('/'))
+    : '';
+
+  const cands = [];
+  if (noteDir) cands.push(normalizePath(noteDir + '/' + clean));
+  cands.push(normalizePath(clean));
+
+  for (const c of cands) {
+    const f = assets.get(c.toLowerCase());
+    if (f) return getAssetUrl(c, f);
+  }
+
+  const base = normalizePath(clean).split('/').pop().toLowerCase();
+  for (const [k, f] of assets) {
+    if (k.split('/').pop() === base) return getAssetUrl(k, f);
+  }
+  return null;
+}
+
+/* =========================================================
+   Obsidian Markdown 预处理
+   ========================================================= */
+function preprocess(md, notePath, assets) {
+  md = md.replace(/^\uFEFF/, '');
+
+  md = md.replace(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n?/, '');
+  md = md.replace(/%%[\s\S]*?%%/g, '');
+
+  const mathStore = [];
+  md = md.replace(
+    /(\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|(?<!\\)\$[^\n$]+?(?<!\\)\$)/g,
+    (m) => {
+      const key = PH_OPEN + 'MATH' + mathStore.length + PH_CLOSE;
+      mathStore.push(m);
+      return key;
+    }
+  );
+
+  md = md.replace(
+    /^(\s*)>\s*\[!(\w+)\][+-]?[ \t]*(.*)$/gm,
+    (m, indent, type, title) => {
+      const t = (title || '').trim() ||
+        type.charAt(0).toUpperCase() + type.slice(1);
+      return `${indent}> **${t}**`;
+    }
+  );
+
+  md = md.replace(/!\[\[([^\]\n]+?)\]\]/g, (m, inner) => {
+    const [targetRaw, alias] = inner.split('|');
+    const target = (targetRaw || '').trim();
+    const url = resolveAsset(target, notePath, assets);
+    if (url) return `![${escapeHtml(alias || target)}](${url})`;
+    return `<span class="embed-missing">🖼 ${escapeHtml(target)}</span>`;
+  });
+
+  md = md.replace(/\[\[([^\]\n]+?)\]\]/g, (m, inner) => {
+    const [targetRaw, alias] = inner.split('|');
+    return escapeHtml(((alias || targetRaw) || '').trim());
+  });
+
+  md = md.replace(
+    /!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g,
+    (m, alt, href) => {
+      if (/^(https?:|data:|blob:)/i.test(href)) return m;
+      let decoded = href;
+      try { decoded = decodeURIComponent(href); } catch (e) {}
+      const url = resolveAsset(decoded, notePath, assets);
+      if (url) return `![${alt}](${url})`;
+      return `<span class="embed-missing">🖼 ${escapeHtml(alt || decoded)}</span>`;
+    }
+  );
+
+  md = md.replace(/==([^=\n]+)==/g, '<mark>$1</mark>');
+
+  return { md, mathStore };
+}
+
+function restoreMath(html, mathStore) {
+  return html.replace(PH_RE, (m, i) => {
+    const tex = mathStore[+i];
+    if (tex == null) return '';
+    return tex.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  });
+}
+
+/* =========================================================
+   语法高亮：HTML 按行拆分
+   --------------------------------------------------------
+   hljs 输出的 <span> 高亮片段可能跨越换行（多行注释/字符串），
+   直接按 \n 拆会破坏 HTML。这里按 token 扫描，维护 span 栈，
+   每行结束时补全闭合标签，下一行开头重新打开，保证 HTML 合法。
+   ========================================================= */
+function splitHtmlIntoLines(html) {
+  const lines = [];
+  let current = '';
+  const stack = [];
+
+  const tokens = html.match(/<[^>]+>|[^<]+/g) || [];
+
+  for (const tok of tokens) {
+    if (tok[0] === '<') {
+      if (tok[1] === '/') {
+        stack.pop();
+        current += tok;
+      } else if (tok.endsWith('/>')) {
+        current += tok;
+      } else {
+        stack.push(tok);
+        current += tok;
+      }
+    } else {
+      const parts = tok.split('\n');
+      for (let p = 0; p < parts.length; p++) {
+        if (p > 0) {
+          // 换行：闭合所有打开的标签，保存这一行
+          let close = '';
+          for (let s = 0; s < stack.length; s++) close += '</span>';
+          lines.push(current + close);
+          // 新行：重新打开所有标签
+          current = stack.join('');
+        }
+        current += parts[p];
+      }
+    }
+  }
+
+  let close = '';
+  for (let s = 0; s < stack.length; s++) close += '</span>';
+  lines.push(current + close);
+
+  return lines;
+}
+
+function detectCodeLang(code) {
+  const cls = code.className || '';
+  const m = cls.match(/\blanguage-([\w-]+)/);
+  return m ? m[1].toLowerCase() : '';
+}
+
+/* 把所有 <pre><code> 转成按行的 .cline 结构（含语法高亮） */
+function prepareCodeBlocks(container) {
+  container.querySelectorAll('pre > code').forEach(code => {
+    const raw = code.textContent;
+    const lang = detectCodeLang(code);
+
+    let lineHtmls = null;
+
+    if (window.hljs) {
+      try {
+        let res;
+        if (lang && hljs.getLanguage(lang)) {
+          res = hljs.highlight(raw, { language: lang, ignoreIllegals: true });
+        } else {
+          res = hljs.highlightAuto(raw);
+        }
+        lineHtmls = splitHtmlIntoLines(res.value);
+      } catch (e) {
+        lineHtmls = null;
+      }
+    }
+
+    if (lineHtmls) {
+      code.innerHTML = lineHtmls
+        .map(l => `<span class="cline">${l || '&nbsp;'}</span>`)
+        .join('');
+    } else {
+      code.innerHTML = raw.split('\n')
+        .map(l => `<span class="cline">${escapeHtml(l) || '&nbsp;'}</span>`)
+        .join('');
+    }
+
+    code.classList.add('code-prepared');
+  });
+}
+
+/* =========================================================
+   页面元素
+   ========================================================= */
+function createPageEl() {
+  const page = document.createElement('div');
+  page.className = 'page';
+  page.style.width  = PAGE_W + 'px';
+  page.style.height = PAGE_H + 'px';
+
+  const inner = document.createElement('div');
+  inner.className = 'page-inner md-body';
+  inner.style.left   = MARGIN_X + 'px';
+  inner.style.top    = MARGIN_Y + 'px';
+  inner.style.width  = CONTENT_W + 'px';
+  inner.style.height = CONTENT_H + 'px';
+
+  const footer = document.createElement('div');
+  footer.className = 'page-footer';
+
+  page.appendChild(inner);
+  page.appendChild(footer);
+  return page;
+}
+
+function isHeadingEl(el) {
+  return el && /^H[1-6]$/.test(el.tagName);
+}
+
+function isPreEl(el) {
+  return el && el.tagName === 'PRE';
+}
+
+/* =========================================================
+   扩展页面高度（非打印模式专用）
+   ========================================================= */
+function expandPageToFit(inner) {
+  const page = inner.parentElement;
+  inner.style.overflow = 'visible';
+  const contentH = inner.scrollHeight;
+  inner.style.height = (contentH + 2) + 'px';
+
+  const FOOTER_SPACE = 55;   // 底部给页脚预留的空间（px）
+  const newPageH = MARGIN_Y + contentH + FOOTER_SPACE;
+  page.style.height = newPageH + 'px';
+  page.dataset.customHeight = String(newPageH);
+  page.classList.add('page-expanded');
+}
+
+/* =========================================================
+   分页核心
+   ========================================================= */
+function paginateBlocks(blocks, mountEl, noSplitCode) {
+  const pages = [];
+
+  const newPage = () => {
+    const p = createPageEl();
+    mountEl.appendChild(p);
+    pages.push(p);
+    return p.querySelector('.page-inner');
+  };
+
+  let inner = newPage();
+
+  const isOverflowing = (el) => el.scrollHeight > el.clientHeight + 2;
+
+  /* ---------- 代码块处理 ---------- */
+  function handlePre(block) {
+    inner.appendChild(block);
+
+    if (!isOverflowing(inner)) return;
+
+    /* ===== 非打印模式：整块处理，必要时扩展页高 ===== */
+    if (noSplitCode) {
+      if (inner.childElementCount === 1) {
+        expandPageToFit(inner);
+        return;
+      }
+      inner.removeChild(block);
+      inner = newPage();
+      inner.appendChild(block);
+      if (isOverflowing(inner)) {
+        expandPageToFit(inner);
+      }
+      return;
+    }
+
+    /* ===== 拆分模式：按 .cline 逐行续排 ===== */
+    inner.removeChild(block);
+
+    const codeEl = block.querySelector('code');
+    if (!codeEl) {
+      inner.appendChild(block);
+      return;
+    }
+
+    const lang    = detectCodeLang(codeEl);
+    const clines  = Array.from(codeEl.children);
+    codeEl.innerHTML = '';
+
+    let curPre  = block;
+    let curCode = codeEl;
+    inner.appendChild(curPre);
+
+    for (let i = 0; i < clines.length; i++) {
+      curCode.appendChild(clines[i]);
+
+      if (!isOverflowing(inner)) continue;
+      if (curCode.childElementCount === 1) continue; // 单行超页，放过
+
+      // 退回这一行
+      const back = curCode.lastElementChild;
+      curCode.removeChild(back);
+      curPre.classList.add('pre-cont-bottom');
+
+      // 开新页续排
+      inner = newPage();
+      curPre = document.createElement('pre');
+      curPre.classList.add('pre-cont-top');
+      curCode = document.createElement('code');
+      if (lang) curCode.className = 'language-' + lang;
+      curPre.appendChild(curCode);
+      inner.appendChild(curPre);
+
+      curCode.appendChild(back);
+    }
+  }
+
+  /* ---------- 普通块 ---------- */
+  function handleOther(block) {
+    inner.appendChild(block);
+    if (!isOverflowing(inner)) return;
+    if (inner.childElementCount === 1) return;
+
+    inner.removeChild(block);
+
+    const tail = [];
+    let last = inner.lastElementChild;
+    while (last && isHeadingEl(last) && tail.length < 2) {
+      tail.unshift(last);
+      inner.removeChild(last);
+      last = inner.lastElementChild;
+    }
+
+    inner = newPage();
+    tail.forEach(t => inner.appendChild(t));
+    inner.appendChild(block);
+  }
+
+  for (const block of blocks) {
+    if (isPreEl(block)) handlePre(block);
+    else                 handleOther(block);
+  }
+
+  return pages;
+}
+
+/* =========================================================
+   目录
+   ========================================================= */
+function buildTocBlocks(entries) {
+  const out = [];
+
+  const title = document.createElement('div');
+  title.className = 'toc-title';
+  title.textContent = '目　录';
+  out.push(title);
+
+  for (const e of entries) {
+    const row = document.createElement('div');
+    row.className = 'toc-row toc-lv-' + Math.min(e.level, 4);
+
+    const t = document.createElement('span');
+    t.className = 'toc-text';
+    t.textContent = e.text;
+
+    const d = document.createElement('span');
+    d.className = 'toc-dots';
+
+    const p = document.createElement('span');
+    p.className = 'toc-page';
+    p.textContent = e.page;
+
+    row.append(t, d, p);
+    out.push(row);
+  }
+  return out;
+}
+
+/* =========================================================
+   构建所有页面
+   ========================================================= */
+async function buildPages(notes) {
+  const tocEnabled   = $('tocEnabled').checked;
+  const tocLevel     = parseInt($('tocLevel').value, 10) || 3;
+  const showFileName = $('showFileName').checked;
+  const breakEach    = $('pageBreakEach').checked;
+  const noSplitCode  = $('noSplitCode').checked;
+
+  const stage = $('stage');
+  stage.innerHTML = '';
+
+  const bodyMount = document.createElement('div');
+  const tocMount  = document.createElement('div');
+  stage.appendChild(bodyMount);
+  stage.appendChild(tocMount);
+
+  /* ---------- 1. 生成 HTML ---------- */
+  const measure = document.createElement('div');
+  measure.className = 'md-body';
+  measure.style.cssText =
+    `width:${CONTENT_W}px;position:absolute;left:-30000px;top:0;`;
+  document.body.appendChild(measure);
+
+  let html = '';
+  notes.forEach((n, idx) => {
+    if (idx > 0) {
+      html += breakEach
+        ? '<div class="note-break"></div>'
+        : '<hr class="note-divider">';
+    }
+    if (showFileName) {
+      const name = n.path.replace(/\.(md|markdown)$/i, '');
+      html += `<div class="note-title">${escapeHtml(name)}</div>`;
+    }
+
+    try {
+      const { md: prepared, mathStore } = preprocess(n.text, n.path, state.assets);
+      html += restoreMath(marked.parse(prepared), mathStore);
+    } catch (err) {
+      console.error(err);
+      html += `<p><em>[解析失败: ${escapeHtml(n.path)}]</em></p>`;
+    }
+  });
+  measure.innerHTML = html;
+
+  /* ---------- 2. 代码高亮 ---------- */
+  prepareCodeBlocks(measure);
+
+  /* ---------- 3. KaTeX ---------- */
+  if (typeof window.renderMathInElement === 'function') {
+    try {
+      renderMathInElement(measure, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true  },
+          { left: '\\[', right: '\\]', display: true  },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '$',  right: '$',  display: false },
+        ],
+        ignoredTags: ['script','noscript','style','textarea','pre','code','option'],
+        throwOnError: false,
+        errorColor: '#cc0000',
+        processEscapes: true,
+      });
+    } catch (e) {
+      console.warn('KaTeX 渲染异常：', e);
+    }
+  }
+
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (e) {}
+  }
+  await waitForImages(measure);
+
+  const blocks = Array.from(measure.children);
+  blocks.forEach(b => b.remove());
+  measure.remove();
+
+  /* ---------- 4. 正文分页 ---------- */
+  let bodyPages;
+  if (breakEach) {
+    bodyPages = [];
+    let group = [];
+    const flush = () => {
+      if (!group.length) return;
+      bodyPages.push(...paginateBlocks(group, bodyMount, noSplitCode));
+      group = [];
+    };
+    for (const b of blocks) {
+      if (b.classList && b.classList.contains('note-break')) flush();
+      else group.push(b);
+    }
+    flush();
+    if (!bodyPages.length) bodyPages = paginateBlocks([], bodyMount, noSplitCode);
+  } else {
+    bodyPages = paginateBlocks(blocks, bodyMount, noSplitCode);
+  }
+
+  /* ---------- 5. 收集标题 ---------- */
+  const headings = [];
+  bodyPages.forEach((pageEl, pageIdx) => {
+    pageEl.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
+      const text = h.textContent.trim();
+      if (!text) return;
+      headings.push({
+        level: parseInt(h.tagName[1], 10),
+        text,
+        pageIndex: pageIdx,
+      });
+    });
+  });
+
+  /* ---------- 6. 目录页 ---------- */
+  let tocPages = [];
+  let tocCount = 0;
+
+  const filtered = headings.filter(h => h.level <= tocLevel);
+
+  if (tocEnabled && filtered.length > 0) {
+    for (let iter = 0; iter < 8; iter++) {
+      tocPages.forEach(p => p.remove());
+      tocPages = [];
+
+      const entries = filtered.map(h => ({
+        level: h.level,
+        text: h.text,
+        page: tocCount + h.pageIndex + 1,
+      }));
+
+      tocPages = paginateBlocks(buildTocBlocks(entries), tocMount, false);
+      const n = tocPages.length;
+
+      if (n === tocCount) break;
+      tocCount = n;
+    }
+  }
+
+  /* ---------- 7. 合并 & 页脚 ---------- */
+  const allPages = [...tocPages, ...bodyPages];
+  const total = allPages.length;
+
+  allPages.forEach((p, i) => {
+    p.querySelector('.page-footer').textContent =
+      `第 ${i + 1} 页 / 共 ${total} 页`;
+  });
+
+  return { allPages, tocCount, bodyCount: bodyPages.length, total };
+}
+
+/* =========================================================
+   图片预加载
+   ========================================================= */
+function waitForImages(container) {
+  const imgs = Array.from(container.querySelectorAll('img'));
+  return Promise.all(imgs.map(img => new Promise(resolve => {
+    if (img.complete && img.naturalWidth > 0) return resolve();
+    const done = () => resolve();
+    img.addEventListener('load', done, { once: true });
+    img.addEventListener('error', done, { once: true });
+    setTimeout(done, 6000);
+  })));
+}
+
+/* =========================================================
+   导出 PDF
+   ========================================================= */
+async function exportPDF() {
+  const notes = state.notes.filter(n => n.checked);
+  if (!notes.length) {
+    alert('请先选择文件夹，并至少勾选一篇笔记。');
+    return;
+  }
+
+  const exportBtn = $('exportBtn');
+  exportBtn.disabled = true;
+  setProgress(0);
+
+  try {
+    setStatus('正在解析 Markdown、渲染公式与代码高亮…');
+    await tick(30);
+
+    const { allPages, total } = await buildPages(notes);
+
+    setStatus(`共 ${total} 页，正在等待资源加载…`);
+    await tick(30);
+    await waitForImages($('stage'));
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error('jsPDF 未加载，请检查网络连接后刷新页面。');
+    }
+    const { jsPDF } = window.jspdf;
+
+    // 读取每页实际渲染尺寸（扩展页高度会不同）
+    const pageDims = allPages.map(p => {
+      const hPx = p.offsetHeight;
+      const wPx = p.offsetWidth || PAGE_W;
+      const hMm = hPx / wPx * 210;
+      return { hPx, wPx, hMm, expanded: p.classList.contains('page-expanded') };
+    });
+
+    const expandedCount = pageDims.filter(d => d.expanded).length;
+    if (expandedCount) {
+      setStatus(`检测到 ${expandedCount} 个超长页面（非打印模式），正在处理…`);
+      await tick(20);
+    }
+
+    // jsPDF 首页尺寸必须在构造时确定
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: [210, pageDims[0].hMm],
+      orientation: 'portrait',
+    });
+    pdf.setProperties({
+      title: 'Obsidian Notes',
+      subject: 'Exported from Obsidian Markdown',
+      creator: 'Markdown → A4 PDF',
+    });
+
+    const MAX_CANVAS_H = 16000;   // 部分浏览器 canvas 高度上限
+
+    for (let i = 0; i < total; i++) {
+      const dims = pageDims[i];
+      setStatus(`正在渲染第 ${i + 1} / ${total} 页${dims.expanded ? '（超长页）' : ''}…`);
+      setProgress((i / total) * 96);
+      await tick(0);
+
+      let scale = 2;
+      if (dims.hPx * scale > MAX_CANVAS_H) {
+        scale = Math.max(1, MAX_CANVAS_H / dims.hPx);
+      }
+
+      const canvas = await html2canvas(allPages[i], {
+        scale,
+        backgroundColor: '#ffffff',
+        logging: false,
+        useCORS: true,
+        allowTaint: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.92);
+
+      if (i > 0) {
+        pdf.addPage([210, dims.hMm], 'portrait');
+      }
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, dims.hMm, undefined, 'FAST');
+
+      canvas.width = 0;
+      canvas.height = 0;
+    }
+
+    setProgress(100);
+    setStatus('正在写入 PDF 文件…');
+    await tick(60);
+
+    pdf.save(buildFileName());
+
+    const extra = expandedCount
+      ? `（其中 ${expandedCount} 页因代码块过长而扩展了高度）`
+      : '';
+    setStatus(`✅ 完成！共导出 ${total} 页。`);
+
+    $('previewArea').innerHTML =
+      `<div class="welcome"><p>✅ <b>导出完成</b>，共 <b>${total}</b> 页${extra}。</p>
+       <p style="color:#9aa1ac;font-size:12.5px;">文件已通过浏览器下载保存。</p></div>`;
+
+  } catch (err) {
+    console.error(err);
+    setStatus('❌ 出错：' + err.message);
+    alert('导出失败：' + err.message);
+  } finally {
+    exportBtn.disabled = false;
+    setTimeout(() => setProgress(0), 1800);
+    setTimeout(() => { $('stage').innerHTML = ''; }, 2500);
+  }
+}
+
+function buildFileName() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `Obsidian导出_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}` +
+         `_${pad(d.getHours())}${pad(d.getMinutes())}.pdf`;
+}
+
+function setStatus(msg) { $('status').textContent = msg; }
+function setProgress(p) { $('progressBar').style.width = Math.max(0, Math.min(100, p)) + '%'; }
+
+/* =========================================================
+   文件夹解析
+   ========================================================= */
+async function handleFolder(fileList) {
+  const files = Array.from(fileList);
+  if (!files.length) return;
+
+  state.notes = [];
+  state.assets = new Map();
+
+  const skipRe = /(^|\/)(\.obsidian|\.trash|\.git|node_modules|\.smart-env)(\/|$)/;
+
+  for (const f of files) {
+    const rel = (f.webkitRelativePath || f.name).replace(/\\/g, '/');
+    const parts = rel.split('/');
+    if (parts.length > 1) parts.shift();
+    const path = parts.join('/');
+    if (!path || skipRe.test(path)) continue;
+
+    if (/\.(md|markdown)$/i.test(path)) {
+      state.notes.push({ path, file: f, checked: true, text: null });
+    } else if (!/\/$/.test(path)) {
+      state.assets.set(path.toLowerCase(), f);
+    }
+  }
+
+  state.notes.sort((a, b) => a.path.localeCompare(b.path, 'zh-Hans-CN'));
+
+  setStatus('正在读取文件内容…');
+  await tick(10);
+
+  for (const n of state.notes) {
+    try { n.text = await n.file.text(); }
+    catch (e) { n.text = ''; }
+  }
+
+  renderFileList();
+  updateStats();
+
+  $('exportBtn').disabled = state.notes.length === 0;
+  setStatus(state.notes.length
+    ? `已加载 ${state.notes.length} 篇笔记，可以开始导出了。`
+    : '未找到 Markdown 文件。');
+}
+
+function renderFileList() {
+  const list = $('fileList');
+  list.innerHTML = '';
+
+  if (!state.notes.length) {
+    list.innerHTML = '<div class="empty-tip">未找到 Markdown 文件</div>';
+    return;
+  }
+
+  state.notes.forEach(n => {
+    const row = document.createElement('label');
+    row.className = 'file-row';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = n.checked;
+    cb.addEventListener('change', () => {
+      n.checked = cb.checked;
+      updateStats();
+      $('exportBtn').disabled = state.notes.filter(x => x.checked).length === 0;
+    });
+
+    const name = document.createElement('span');
+    name.className = 'file-name';
+    name.textContent = n.path;
+    name.title = n.path;
+
+    const size = document.createElement('span');
+    size.className = 'file-size';
+    size.textContent = fmtSize(n.file.size);
+
+    row.append(cb, name, size);
+    list.appendChild(row);
+  });
+}
+
+function updateStats() {
+  const sel = state.notes.filter(n => n.checked).length;
+  $('statNotes').textContent = `${sel} / ${state.notes.length} 篇笔记`;
+  $('statAssets').textContent = `${state.assets.size} 个附件`;
+}
+
+/* =========================================================
+   事件绑定
+   ========================================================= */
+$('folderInput').addEventListener('change', (e) => {
+  if (e.target.files && e.target.files.length) {
+    handleFolder(e.target.files);
+  }
+});
+
+$('exportBtn').addEventListener('click', exportPDF);
+
+if (window.marked && typeof marked.setOptions === 'function') {
+  marked.setOptions({ gfm: true, breaks: false });
+}
+
+window.addEventListener('beforeunload', () => {
+  blobUrlCache.forEach(url => URL.revokeObjectURL(url));
+});
+
+window.addEventListener('load', () => {
+  const missing = [];
+  if (typeof marked === 'undefined')   missing.push('marked.js');
+  if (typeof html2canvas === 'undefined') missing.push('html2canvas');
+  if (!window.jspdf)                   missing.push('jsPDF');
+  if (typeof window.renderMathInElement === 'undefined') missing.push('KaTeX');
+  if (typeof window.hljs === 'undefined') missing.push('highlight.js');
+  if (missing.length) {
+    setStatus('⚠️ 依赖加载失败：' + missing.join('、') + '（请检查网络）');
+  }
+});
+</script>
+</body>
+</html>
