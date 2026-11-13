@@ -32,6 +32,7 @@
 
   .app { display: flex; min-height: 100vh; }
 
+  /* ---------- 侧栏 ---------- */
   .sidebar {
     width: 340px;
     flex: none;
@@ -197,15 +198,38 @@
     padding-top: 12px;
   }
 
+  /* ---------- 主区域 ---------- */
   .main {
     flex: 1;
     padding: 28px 32px;
     overflow: auto;
     min-width: 0;
   }
-  .main h2 { font-size: 15px; margin: 0 0 14px; font-weight: 600; }
+  .main-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .main-header h2 { font-size: 15px; margin: 0; font-weight: 600; }
+
+  .btn-small {
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 7px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--text);
+    cursor: pointer;
+    transition: .16s;
+    white-space: nowrap;
+  }
+  .btn-small:hover { background: #f7f8fa; border-color: #cfd3da; }
+  .btn-small:disabled { opacity: .5; cursor: not-allowed; }
+
   .welcome {
-    max-width: 560px;
+    max-width: 600px;
     color: #5a6270;
     font-size: 13.5px;
     line-height: 1.9;
@@ -218,6 +242,56 @@
     font-size: 12.5px;
   }
 
+  /* ---------- 预览 ---------- */
+  .preview-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .preview-header b { color: var(--text); }
+  .preview-hint {
+    color: #b0b6bf;
+    font-size: 12px;
+  }
+
+  .preview-stage {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 26px 22px;
+    align-items: flex-start;
+  }
+  .thumb-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .thumb {
+    background: #fff;
+    box-shadow:
+      0 2px 14px rgba(20,25,40,.13),
+      0 0 0 1px rgba(20,25,40,.04);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .thumb > .page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    pointer-events: none;
+  }
+  .thumb-label {
+    font-size: 11.5px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ================= 纸张样式 ================= */
   #stage {
     position: absolute;
     left: -30000px;
@@ -247,6 +321,7 @@
     letter-spacing: .5px;
   }
 
+  /* ---------- Markdown 正文排版 ---------- */
   .md-body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
                  "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -385,6 +460,7 @@
   }
   .md-body .katex { font-size: 1.05em; }
 
+  /* ---------- 目录 ---------- */
   .toc-title {
     font-size: 26px;
     font-weight: 700;
@@ -422,12 +498,14 @@
     .app { flex-direction: column; }
     .sidebar { width: 100%; position: static; max-height: none; }
     .main { padding: 20px; }
+    .preview-stage { gap: 20px 16px; }
   }
 </style>
 </head>
 <body>
 
 <div class="app">
+  <!-- ================= 侧栏 ================= -->
   <aside class="sidebar">
     <h1><span class="dot"></span>Markdown 导出</h1>
     <p class="sub">Obsidian 笔记 → HTML / A4 PDF · 高亮 · 公式</p>
@@ -499,13 +577,17 @@
     </div>
   </aside>
 
+  <!-- ================= 主区域 ================= -->
   <main class="main">
-    <h2>页面预览</h2>
+    <div class="main-header">
+      <h2>页面预览</h2>
+      <button class="btn-small" id="refreshPreviewBtn" disabled>🔄 刷新预览</button>
+    </div>
     <div id="previewArea">
       <div class="welcome">
         <p>这个工具会把 Obsidian 笔记库中的 Markdown 文件排版导出。</p>
         <ul>
-          <li>先在左侧选择你的 <b>Obsidian 库文件夹</b></li>
+          <li>先在左侧选择你的 <b>Obsidian 库文件夹</b>，主区域会自动展示排版预览</li>
           <li><b>导出 HTML</b>：单文件、带锚点目录、图片内联、可直接分享</li>
           <li><b>导出 PDF</b>：标准 A4、自动分页、带页码，代码块可跨页续排</li>
           <li>两种导出都支持 <b>C++ 等代码语法高亮</b>与 <b>LaTeX 公式</b></li>
@@ -524,7 +606,6 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous"></script>
-<!-- ★ 修复：使用官方 cdn-release 浏览器构建（挂载 window.hljs），内置 cpp 等 35+ 语言 -->
 <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
 
 <script>
@@ -539,6 +620,9 @@ const MARGIN_Y  = 18  * PX_PER_MM;
 const CONTENT_W = PAGE_W - MARGIN_X * 2;
 const CONTENT_H = PAGE_H - MARGIN_Y * 2;
 
+const PREVIEW_SCALE     = 0.32;   // A4 缩略图缩放比例
+const PREVIEW_MAX_PAGES = 9;      // 预览最多显示页数（一行 3 个 × 3 行）
+
 const PH_OPEN  = '\uE000';
 const PH_CLOSE = '\uE001';
 const PH_RE    = new RegExp(PH_OPEN + 'MATH(\\d+)' + PH_CLOSE, 'g');
@@ -548,6 +632,8 @@ const state = {
   assets: new Map(),
 };
 const blobUrlCache = new Map();
+
+let previewToken = 0;
 
 const $ = (id) => document.getElementById(id);
 const tick = (ms = 20) => new Promise(r => setTimeout(r, ms));
@@ -697,7 +783,7 @@ function restoreMath(html, mathStore) {
 }
 
 /* =========================================================
-   语言别名映射（让 ```C++ / ```c# / ```py 也能正确高亮）
+   语言别名映射
    ========================================================= */
 const LANG_ALIAS = {
   'c++': 'cpp', 'cc': 'cpp', 'cxx': 'cpp', 'hpp': 'cpp', 'hxx': 'cpp', 'h': 'cpp',
@@ -720,7 +806,7 @@ const LANG_ALIAS = {
 };
 
 /* =========================================================
-   语法高亮：把 hljs 输出按行拆成合法 HTML
+   语法高亮
    ========================================================= */
 function splitHtmlIntoLines(html) {
   const lines = [];
@@ -836,7 +922,7 @@ function renderMath(container) {
 }
 
 /* =========================================================
-   渲染 Markdown 到离屏容器（两种导出共用）
+   渲染 Markdown 到离屏容器（预览与导出共用）
    ========================================================= */
 async function renderMarkdownContainer(notes) {
   const showFileName = $('showFileName').checked;
@@ -871,7 +957,7 @@ async function renderMarkdownContainer(notes) {
   measure.innerHTML = html;
 
   if (!window.hljs) {
-    console.warn('[高亮] window.hljs 未定义，代码将显示为纯文本。请检查 highlight.js CDN 是否可访问。');
+    console.warn('[高亮] window.hljs 未定义，代码将显示为纯文本。');
   }
 
   prepareCodeBlocks(measure);
@@ -897,7 +983,334 @@ function waitForImages(container) {
 }
 
 /* =========================================================
-   ============  导出 HTML（单文件、无页码） ============
+   页面元素与分页（PDF 与预览共用）
+   ========================================================= */
+function createPageEl() {
+  const page = document.createElement('div');
+  page.className = 'page';
+  page.style.width  = PAGE_W + 'px';
+  page.style.height = PAGE_H + 'px';
+
+  const inner = document.createElement('div');
+  inner.className = 'page-inner md-body';
+  inner.style.left   = MARGIN_X + 'px';
+  inner.style.top    = MARGIN_Y + 'px';
+  inner.style.width  = CONTENT_W + 'px';
+  inner.style.height = CONTENT_H + 'px';
+
+  const footer = document.createElement('div');
+  footer.className = 'page-footer';
+
+  page.appendChild(inner);
+  page.appendChild(footer);
+  return page;
+}
+
+function isHeadingEl(el) {
+  return el && /^H[1-6]$/.test(el.tagName);
+}
+
+function isPreEl(el) {
+  return el && el.tagName === 'PRE';
+}
+
+function paginateBlocks(blocks, mountEl) {
+  const pages = [];
+
+  const newPage = () => {
+    const p = createPageEl();
+    mountEl.appendChild(p);
+    pages.push(p);
+    return p.querySelector('.page-inner');
+  };
+
+  let inner = newPage();
+
+  const isOverflowing = (el) => el.scrollHeight > el.clientHeight + 2;
+
+  function handlePre(block) {
+    inner.appendChild(block);
+    if (!isOverflowing(inner)) return;
+    if (inner.childElementCount === 1) return;
+
+    inner.removeChild(block);
+
+    const codeEl = block.querySelector('code');
+    if (!codeEl || !codeEl.children.length) {
+      inner = newPage();
+      inner.appendChild(block);
+      return;
+    }
+
+    const lang   = detectCodeLang(codeEl);
+    const clines = Array.from(codeEl.children);
+    codeEl.innerHTML = '';
+
+    let curPre  = block;
+    let curCode = codeEl;
+    inner.appendChild(curPre);
+
+    for (let i = 0; i < clines.length; i++) {
+      curCode.appendChild(clines[i]);
+
+      if (!isOverflowing(inner)) continue;
+      if (curCode.childElementCount === 1) continue;
+
+      const back = curCode.lastElementChild;
+      curCode.removeChild(back);
+      curPre.classList.add('pre-cont-bottom');
+
+      inner = newPage();
+      curPre = document.createElement('pre');
+      curPre.classList.add('pre-cont-top');
+      curCode = document.createElement('code');
+      if (lang) curCode.className = 'language-' + lang;
+      curCode.classList.add('hljs', 'code-prepared');
+      curPre.appendChild(curCode);
+      inner.appendChild(curPre);
+
+      curCode.appendChild(back);
+    }
+  }
+
+  function handleOther(block) {
+    inner.appendChild(block);
+    if (!isOverflowing(inner)) return;
+    if (inner.childElementCount === 1) return;
+
+    inner.removeChild(block);
+
+    const tail = [];
+    let last = inner.lastElementChild;
+    while (last && isHeadingEl(last) && tail.length < 2) {
+      tail.unshift(last);
+      inner.removeChild(last);
+      last = inner.lastElementChild;
+    }
+
+    inner = newPage();
+    tail.forEach(t => inner.appendChild(t));
+    inner.appendChild(block);
+  }
+
+  for (const block of blocks) {
+    if (isPreEl(block)) handlePre(block);
+    else                 handleOther(block);
+  }
+
+  return pages;
+}
+
+function buildTocBlocks(entries) {
+  const out = [];
+
+  const title = document.createElement('div');
+  title.className = 'toc-title';
+  title.textContent = '目　录';
+  out.push(title);
+
+  for (const e of entries) {
+    const row = document.createElement('div');
+    row.className = 'toc-row toc-lv-' + Math.min(e.level, 4);
+
+    const t = document.createElement('span');
+    t.className = 'toc-text';
+    t.textContent = e.text;
+
+    const d = document.createElement('span');
+    d.className = 'toc-dots';
+
+    const p = document.createElement('span');
+    p.className = 'toc-page';
+    p.textContent = e.page;
+
+    row.append(t, d, p);
+    out.push(row);
+  }
+  return out;
+}
+
+/**
+ * 构建完整 PDF 页面（含目录页、页脚页码）
+ * 返回 { allPages, total }，页面已挂载在 #stage 中
+ */
+async function buildPdfPages(notes) {
+  const tocEnabled = $('tocEnabled').checked;
+  const tocLevel   = parseInt($('tocLevel').value, 10) || 3;
+  const breakEach  = $('pageBreakEach').checked;
+
+  const stage = $('stage');
+  stage.innerHTML = '';
+
+  const bodyMount = document.createElement('div');
+  const tocMount  = document.createElement('div');
+  stage.appendChild(bodyMount);
+  stage.appendChild(tocMount);
+
+  const measure = await renderMarkdownContainer(notes);
+
+  const blocks = Array.from(measure.children);
+  blocks.forEach(b => b.remove());
+  measure.remove();
+
+  /* 正文分页 */
+  let bodyPages;
+  if (breakEach) {
+    bodyPages = [];
+    let group = [];
+    const flush = () => {
+      if (!group.length) return;
+      bodyPages.push(...paginateBlocks(group, bodyMount));
+      group = [];
+    };
+    for (const b of blocks) {
+      if (b.classList && b.classList.contains('note-break')) flush();
+      else group.push(b);
+    }
+    flush();
+    if (!bodyPages.length) bodyPages = paginateBlocks([], bodyMount);
+  } else {
+    bodyPages = paginateBlocks(blocks, bodyMount);
+  }
+
+  /* 收集标题 */
+  const headings = [];
+  bodyPages.forEach((pageEl, pageIdx) => {
+    pageEl.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
+      const text = h.textContent.trim();
+      if (!text) return;
+      headings.push({
+        level: parseInt(h.tagName[1], 10),
+        text,
+        pageIndex: pageIdx,
+      });
+    });
+  });
+
+  /* 目录页（迭代收敛页码） */
+  let tocPages = [];
+  let tocCount = 0;
+
+  const filtered = headings.filter(h => h.level <= tocLevel);
+
+  if (tocEnabled && filtered.length > 0) {
+    for (let iter = 0; iter < 8; iter++) {
+      tocPages.forEach(p => p.remove());
+      tocPages = [];
+
+      const entries = filtered.map(h => ({
+        level: h.level,
+        text: h.text,
+        page: tocCount + h.pageIndex + 1,
+      }));
+
+      tocPages = paginateBlocks(buildTocBlocks(entries), tocMount);
+      const n = tocPages.length;
+
+      if (n === tocCount) break;
+      tocCount = n;
+    }
+  }
+
+  /* 合并 & 页脚 */
+  const allPages = [...tocPages, ...bodyPages];
+  const total = allPages.length;
+
+  allPages.forEach((p, i) => {
+    p.querySelector('.page-footer').textContent =
+      `第 ${i + 1} 页 / 共 ${total} 页`;
+  });
+
+  return { allPages, total };
+}
+
+/* =========================================================
+   ★ 页面预览
+   ========================================================= */
+async function renderPreview() {
+  const notes = state.notes.filter(n => n.checked);
+  const area  = $('previewArea');
+
+  if (!notes.length) {
+    area.innerHTML =
+      `<div class="welcome"><p>请先在左侧选择文件夹，并勾选要预览的笔记。</p></div>`;
+    return;
+  }
+
+  const token = ++previewToken;
+  $('refreshPreviewBtn').disabled = true;
+  area.innerHTML =
+    `<div class="welcome"><p>⏳ 正在渲染预览（${notes.length} 篇笔记）…</p></div>`;
+
+  try {
+    const { allPages, total } = await buildPdfPages(notes);
+
+    if (token !== previewToken) return;   // 已被更新的预览取代
+
+    area.innerHTML = '';
+
+    const header = document.createElement('div');
+    header.className = 'preview-header';
+    const shown = Math.min(total, PREVIEW_MAX_PAGES);
+    header.innerHTML =
+      `共 <b>${total}</b> 页` +
+      (total > PREVIEW_MAX_PAGES
+        ? `<span class="preview-hint">仅显示前 ${PREVIEW_MAX_PAGES} 页</span>`
+        : '');
+    area.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'preview-stage';
+    area.appendChild(grid);
+
+    const thumbW = PAGE_W * PREVIEW_SCALE;
+    const thumbH = PAGE_H * PREVIEW_SCALE;
+
+    for (let i = 0; i < shown; i++) {
+      const page = allPages[i];
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'thumb-wrapper';
+
+      const thumb = document.createElement('div');
+      thumb.className = 'thumb';
+      thumb.style.width  = thumbW + 'px';
+      thumb.style.height = thumbH + 'px';
+
+      const clone = page.cloneNode(true);
+      clone.style.transform = `scale(${PREVIEW_SCALE})`;
+      thumb.appendChild(clone);
+
+      const label = document.createElement('div');
+      label.className = 'thumb-label';
+      label.textContent = `第 ${i + 1} 页`;
+
+      wrapper.appendChild(thumb);
+      wrapper.appendChild(label);
+      grid.appendChild(wrapper);
+    }
+
+    await waitForImages(grid);
+
+    if (token === previewToken) {
+      setStatus(`预览已更新：共 ${total} 页。`);
+    }
+
+  } catch (err) {
+    if (token !== previewToken) return;
+    console.error('预览失败：', err);
+    area.innerHTML =
+      `<div class="welcome"><p>❌ 预览失败：${escapeHtml(err.message)}</p>
+       <p style="color:#9aa1ac;font-size:12.5px;">可尝试刷新页面后重试。</p></div>`;
+  } finally {
+    if (token === previewToken) {
+      $('refreshPreviewBtn').disabled = !state.notes.some(n => n.checked);
+    }
+  }
+}
+
+/* =========================================================
+   导出 HTML
    ========================================================= */
 const HTML_HEADING_SEL = 'h1,h2,h3,h4,h5,h6';
 
@@ -1115,247 +1528,10 @@ async function exportHTML() {
     downloadFile(html, buildFileName('html'), 'text/html');
     setStatus('✅ HTML 导出完成。');
 
-    $('previewArea').innerHTML =
-      `<div class="welcome"><p>✅ <b>HTML 导出完成</b>，共 ${notes.length} 篇笔记。</p>
-       <p style="color:#9aa1ac;font-size:12.5px;">目录为可点击锚点，无页码；图片已内联，公式与代码高亮样式通过 CDN 加载。</p></div>`;
   } finally {
     measure.remove();
     setTimeout(() => setProgress(0), 1500);
   }
-}
-
-/* =========================================================
-   页面元素与分页（PDF 专用）
-   ========================================================= */
-function createPageEl() {
-  const page = document.createElement('div');
-  page.className = 'page';
-  page.style.width  = PAGE_W + 'px';
-  page.style.height = PAGE_H + 'px';
-
-  const inner = document.createElement('div');
-  inner.className = 'page-inner md-body';
-  inner.style.left   = MARGIN_X + 'px';
-  inner.style.top    = MARGIN_Y + 'px';
-  inner.style.width  = CONTENT_W + 'px';
-  inner.style.height = CONTENT_H + 'px';
-
-  const footer = document.createElement('div');
-  footer.className = 'page-footer';
-
-  page.appendChild(inner);
-  page.appendChild(footer);
-  return page;
-}
-
-function isHeadingEl(el) {
-  return el && /^H[1-6]$/.test(el.tagName);
-}
-
-function isPreEl(el) {
-  return el && el.tagName === 'PRE';
-}
-
-function paginateBlocks(blocks, mountEl) {
-  const pages = [];
-
-  const newPage = () => {
-    const p = createPageEl();
-    mountEl.appendChild(p);
-    pages.push(p);
-    return p.querySelector('.page-inner');
-  };
-
-  let inner = newPage();
-
-  const isOverflowing = (el) => el.scrollHeight > el.clientHeight + 2;
-
-  function handlePre(block) {
-    inner.appendChild(block);
-    if (!isOverflowing(inner)) return;
-    if (inner.childElementCount === 1) return;
-
-    inner.removeChild(block);
-
-    const codeEl = block.querySelector('code');
-    if (!codeEl || !codeEl.children.length) {
-      inner = newPage();
-      inner.appendChild(block);
-      return;
-    }
-
-    const lang   = detectCodeLang(codeEl);
-    const clines = Array.from(codeEl.children);
-    codeEl.innerHTML = '';
-
-    let curPre  = block;
-    let curCode = codeEl;
-    inner.appendChild(curPre);
-
-    for (let i = 0; i < clines.length; i++) {
-      curCode.appendChild(clines[i]);
-
-      if (!isOverflowing(inner)) continue;
-      if (curCode.childElementCount === 1) continue;
-
-      const back = curCode.lastElementChild;
-      curCode.removeChild(back);
-      curPre.classList.add('pre-cont-bottom');
-
-      inner = newPage();
-      curPre = document.createElement('pre');
-      curPre.classList.add('pre-cont-top');
-      curCode = document.createElement('code');
-      if (lang) curCode.className = 'language-' + lang;
-      curCode.classList.add('hljs', 'code-prepared');
-      curPre.appendChild(curCode);
-      inner.appendChild(curPre);
-
-      curCode.appendChild(back);
-    }
-  }
-
-  function handleOther(block) {
-    inner.appendChild(block);
-    if (!isOverflowing(inner)) return;
-    if (inner.childElementCount === 1) return;
-
-    inner.removeChild(block);
-
-    const tail = [];
-    let last = inner.lastElementChild;
-    while (last && isHeadingEl(last) && tail.length < 2) {
-      tail.unshift(last);
-      inner.removeChild(last);
-      last = inner.lastElementChild;
-    }
-
-    inner = newPage();
-    tail.forEach(t => inner.appendChild(t));
-    inner.appendChild(block);
-  }
-
-  for (const block of blocks) {
-    if (isPreEl(block)) handlePre(block);
-    else                 handleOther(block);
-  }
-
-  return pages;
-}
-
-function buildTocBlocks(entries) {
-  const out = [];
-
-  const title = document.createElement('div');
-  title.className = 'toc-title';
-  title.textContent = '目　录';
-  out.push(title);
-
-  for (const e of entries) {
-    const row = document.createElement('div');
-    row.className = 'toc-row toc-lv-' + Math.min(e.level, 4);
-
-    const t = document.createElement('span');
-    t.className = 'toc-text';
-    t.textContent = e.text;
-
-    const d = document.createElement('span');
-    d.className = 'toc-dots';
-
-    const p = document.createElement('span');
-    p.className = 'toc-page';
-    p.textContent = e.page;
-
-    row.append(t, d, p);
-    out.push(row);
-  }
-  return out;
-}
-
-async function buildPdfPages(notes) {
-  const tocEnabled = $('tocEnabled').checked;
-  const tocLevel   = parseInt($('tocLevel').value, 10) || 3;
-  const breakEach  = $('pageBreakEach').checked;
-
-  const stage = $('stage');
-  stage.innerHTML = '';
-
-  const bodyMount = document.createElement('div');
-  const tocMount  = document.createElement('div');
-  stage.appendChild(bodyMount);
-  stage.appendChild(tocMount);
-
-  const measure = await renderMarkdownContainer(notes);
-
-  const blocks = Array.from(measure.children);
-  blocks.forEach(b => b.remove());
-  measure.remove();
-
-  let bodyPages;
-  if (breakEach) {
-    bodyPages = [];
-    let group = [];
-    const flush = () => {
-      if (!group.length) return;
-      bodyPages.push(...paginateBlocks(group, bodyMount));
-      group = [];
-    };
-    for (const b of blocks) {
-      if (b.classList && b.classList.contains('note-break')) flush();
-      else group.push(b);
-    }
-    flush();
-    if (!bodyPages.length) bodyPages = paginateBlocks([], bodyMount);
-  } else {
-    bodyPages = paginateBlocks(blocks, bodyMount);
-  }
-
-  const headings = [];
-  bodyPages.forEach((pageEl, pageIdx) => {
-    pageEl.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(h => {
-      const text = h.textContent.trim();
-      if (!text) return;
-      headings.push({
-        level: parseInt(h.tagName[1], 10),
-        text,
-        pageIndex: pageIdx,
-      });
-    });
-  });
-
-  let tocPages = [];
-  let tocCount = 0;
-
-  const filtered = headings.filter(h => h.level <= tocLevel);
-
-  if (tocEnabled && filtered.length > 0) {
-    for (let iter = 0; iter < 8; iter++) {
-      tocPages.forEach(p => p.remove());
-      tocPages = [];
-
-      const entries = filtered.map(h => ({
-        level: h.level,
-        text: h.text,
-        page: tocCount + h.pageIndex + 1,
-      }));
-
-      tocPages = paginateBlocks(buildTocBlocks(entries), tocMount);
-      const n = tocPages.length;
-
-      if (n === tocCount) break;
-      tocCount = n;
-    }
-  }
-
-  const allPages = [...tocPages, ...bodyPages];
-  const total = allPages.length;
-
-  allPages.forEach((p, i) => {
-    p.querySelector('.page-footer').textContent =
-      `第 ${i + 1} 页 / 共 ${total} 页`;
-  });
-
-  return { allPages, total };
 }
 
 /* =========================================================
@@ -1413,19 +1589,16 @@ async function exportPDF() {
 
   pdf.save(buildFileName('pdf'));
   setStatus(`✅ PDF 导出完成，共 ${total} 页。`);
-
-  $('previewArea').innerHTML =
-    `<div class="welcome"><p>✅ <b>PDF 导出完成</b>，共 <b>${total}</b> 页。</p>
-     <p style="color:#9aa1ac;font-size:12.5px;">文件已通过浏览器下载保存。</p></div>`;
 }
 
 /* =========================================================
-   通用：导出任务包装
+   通用
    ========================================================= */
 function setBusy(busy) {
   const hasSel = state.notes.some(n => n.checked);
   $('exportPdfBtn').disabled  = busy || !hasSel;
   $('exportHtmlBtn').disabled = busy || !hasSel;
+  $('refreshPreviewBtn').disabled = busy || !hasSel;
 }
 
 async function runExport(fn) {
@@ -1499,8 +1672,13 @@ async function handleFolder(fileList) {
   setBusy(false);
 
   setStatus(state.notes.length
-    ? `已加载 ${state.notes.length} 篇笔记，可以开始导出了。`
+    ? `已加载 ${state.notes.length} 篇笔记，正在渲染预览…`
     : '未找到 Markdown 文件。');
+
+  /* ★ 选完文件夹后自动渲染预览 */
+  if (state.notes.length) {
+    renderPreview();
+  }
 }
 
 function renderFileList() {
@@ -1553,6 +1731,8 @@ $('folderInput').addEventListener('change', (e) => {
     handleFolder(e.target.files);
   }
 });
+
+$('refreshPreviewBtn').addEventListener('click', renderPreview);
 
 $('exportPdfBtn').addEventListener('click', () => runExport(exportPDF));
 $('exportHtmlBtn').addEventListener('click', () => runExport(exportHTML));
